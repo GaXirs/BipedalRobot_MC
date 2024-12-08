@@ -1,11 +1,5 @@
 using LaTeXStrings
 
-function toInt16(numbers::Vector{Int})::Vector{Int}
-    # First convert it to UInt16 to match the bit size, then reinterpret it as Int16
-    new_numbers = reinterpret(Int16, UInt16.(numbers))
-    return new_numbers
-end
-
 function toInt16(numbers::Vector{Int})::Vector{Int16}
     # We assume `numbers` are 16-bit unsigned integers (UInt16), reinterpret them to Int16
     return reinterpret(Int16, UInt16.(numbers))
