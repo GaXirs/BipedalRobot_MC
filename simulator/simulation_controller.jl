@@ -29,6 +29,10 @@ MODEL_2D = true;
 
 write_torques = true;
 
+ctrl = false;
+
+filename = joinpath(@__DIR__, "..", "data", "torques.txt");
+
 ###########################################################
 #                    Simulation parameters                #
 ###########################################################
@@ -49,66 +53,9 @@ else
     robot_model = "ZMP_3DBipedRobot.urdf"
 end
 
-lw = 2          # Plot line width 
-dpi = 600
-msw = 0.1
-ms = 2
-
 # Simulation parameters
 Δt = 1e-3       # Simulation step 
 
-# Position control parameters
-Kp = 10000.0
-Ki = 100.0
-Kd = 100.0
-
-# true : PD with dynamics compensation, false  : random torque 
-ctrl = true
-
-###########################################################
-#                    ZMP based controller                 #
-###########################################################
-# Construct the biped robot which store the geomtrical propreties and the path wanted 
-br = ZMProbot.BipedRobot(;
-    readFile = true,
-    URDFfileName = robot_model,
-    paramFileName = "param.jl",
-)
-br.xPath = xPath;
-br.yPath = yPath;
-br.initial_position = [xPath[1], yPath[1], θ_0]
-
-# Construct the Preview Controller
-pc = ZMProbot.PreviewController(; br = br, check = PLOT_RESULT)
-
-# Run the Foot Planer Algorithm and get the foot position 
-fp = ZMProbot.FootPlanner(; br = br, check = PLOT_RESULT)
-
-# Get the ZMP reference trajectory 
-zt = ZMProbot.ZMPTrajectory(; br = br, fp = fp, check = PLOT_RESULT)
-
-# Convert the ZMP reference trajectory into CoM trajectory
-ct = ZMProbot.CoMTrajectory(; br = br, pc = pc, zt = zt, check = PLOT_RESULT)
-
-# Get the Swing Foot trajectory 
-sf = ZMProbot.SwingFootTrajectory(; br = br, fp = fp, zt = zt, check = PLOT_RESULT)
-
-# Get the joint trajectory from the all path 
-ik = ZMProbot.InverseKinematics(; br = br, fp = fp, ct = ct, sf = sf, check = PLOT_RESULT)
-
-# Store into more convienant variables 
-qr = ik.q_r;
-ql = ik.q_l;
-qref = [ql[:, 1] qr[:, 1] ql[:, 2] qr[:, 2]]
-
-CoM = reduce(hcat, ct.CoM)
-ZMP = reduce(hcat, zt.ZMP)
-tplot = reduce(vcat, zt.timeVec)
-
-###########################################################
-#                  Simulation environement                #
-###########################################################
-tend = tplot[end]       # Simulation time 
 # Construct the robot in the simulation engine 
 rs = ZMProbot.RobotSimulator(;
     fileName = robot_model,
@@ -117,6 +64,7 @@ rs = ZMProbot.RobotSimulator(;
     add_gravity = true,
     add_flat_ground = true,
 );
+
 # Generate the visualiser 
 vis = ZMProbot.set_visulalizer(; mechanism = rs.mechanism)
 
@@ -126,16 +74,72 @@ actuators = [0, 0, 0, 0]
 foot = [0, 0]
 ZMProbot.set_nominal!(rs, vis, boom, actuators, foot)
 
-# Simulate the robot
-if(write_torques)
-    open(joinpath(@__DIR__, "..", "data", "torques.txt"), "w") do file
-        # The file is now open in write mode, and all its contents are deleted.
-        # Do nothing if you don't want to write anything.
-    end
-end
-controller! = ZMProbot.trajectory_controller!(rs, tplot, qref, Δt, Kp, Ki, Kd, ctrl, write_torques)
-ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);
+if(ctrl)
+    # Position control parameters
+    Kp = 10000.0
+    Ki = 100.0
+    Kd = 100.0
 
+    ###########################################################
+    #                    ZMP based controller                 #
+    ###########################################################
+    # Construct the biped robot which store the geomtrical propreties and the path wanted 
+    br = ZMProbot.BipedRobot(;
+        readFile = true,
+        URDFfileName = robot_model,
+        paramFileName = "param.jl",
+    )
+    br.xPath = xPath;
+    br.yPath = yPath;
+    br.initial_position = [xPath[1], yPath[1], θ_0]
+
+    # Construct the Preview Controller
+    pc = ZMProbot.PreviewController(; br = br, check = PLOT_RESULT)
+
+    # Run the Foot Planer Algorithm and get the foot position 
+    fp = ZMProbot.FootPlanner(; br = br, check = PLOT_RESULT)
+
+    # Get the ZMP reference trajectory 
+    zt = ZMProbot.ZMPTrajectory(; br = br, fp = fp, check = PLOT_RESULT)
+
+    # Convert the ZMP reference trajectory into CoM trajectory
+    ct = ZMProbot.CoMTrajectory(; br = br, pc = pc, zt = zt, check = PLOT_RESULT)
+
+    # Get the Swing Foot trajectory 
+    sf = ZMProbot.SwingFootTrajectory(; br = br, fp = fp, zt = zt, check = PLOT_RESULT)
+
+    # Get the joint trajectory from the all path 
+    ik = ZMProbot.InverseKinematics(; br = br, fp = fp, ct = ct, sf = sf, check = PLOT_RESULT)
+
+    # Store into more convienant variables 
+    qr = ik.q_r;
+    ql = ik.q_l;
+    qref = [ql[:, 1] qr[:, 1] ql[:, 2] qr[:, 2]]
+
+    CoM = reduce(hcat, ct.CoM)
+    ZMP = reduce(hcat, zt.ZMP)
+    tplot = reduce(vcat, zt.timeVec)
+
+    ###########################################################
+    #                  Simulation environement                #
+    ###########################################################
+    tend = tplot[end]       # Simulation time 
+
+    # Simulate the robot
+    if(write_torques)
+        open(filename, "w") do file
+            # The file is now open in write mode, and all its contents are deleted.
+            # Do nothing if you don't want to write anything.
+        end
+    end
+    controller! = ZMProbot.trajectory_controller!(rs, tplot, qref, Δt, Kp, Ki, Kd, filename, write_torques)
+    ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);
+else
+    tend = 20.0
+    # Simulate the robot
+    controller! = ZMProbot.controller_torque_input_file(rs, tend, Δt, filename)
+    ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);
+end
 # Open the visulaiser and run the animation 
 if ANIMATE_RESULT
     open(vis)
