@@ -27,7 +27,7 @@ ANIMATE_RESULT = true;
 
 MODEL_2D = true;
 
-write_torques = true;
+write_torques = false;
 
 ctrl = false;
 
@@ -129,7 +129,6 @@ if(ctrl)
     if(write_torques)
         open(filename, "w") do file
             # The file is now open in write mode, and all its contents are deleted.
-            # Do nothing if you don't want to write anything.
         end
     end
     controller! = ZMProbot.trajectory_controller!(rs, tplot, qref, Δt, Kp, Ki, Kd, filename, write_torques)
