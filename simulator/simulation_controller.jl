@@ -29,6 +29,8 @@ MODEL_2D = true;
 
 write_torques = true;
 
+data_from_CSV = true;
+
 ###########################################################
 #                    Simulation parameters                #
 ###########################################################
@@ -68,42 +70,63 @@ ctrl = true
 ###########################################################
 #                    ZMP based controller                 #
 ###########################################################
-# Construct the biped robot which store the geomtrical propreties and the path wanted 
-br = ZMProbot.BipedRobot(;
-    readFile = true,
-    URDFfileName = robot_model,
-    paramFileName = "param.jl",
-)
-br.xPath = xPath;
-br.yPath = yPath;
-br.initial_position = [xPath[1], yPath[1], θ_0]
 
-# Construct the Preview Controller
-pc = ZMProbot.PreviewController(; br = br, check = PLOT_RESULT)
+if(data_from_CSV)
+    data = CSV.read(joinpath(@__DIR__, "walkingPattern_ref_short.csv"), DataFrame)
+    # Extract data from the DataFrame
+    tplot = data.time  # Extract the time column
+    q1_l = data.q1_l   # Extract q1_l
+    q1_r = data.q1_r   # Extract q1_r
+    q2_l = data.q2_l   # Extract q2_l
+    q2_r = data.q2_r   # Extract q2_r
+    ZMPx = data.ZMPx   # Extract ZMPx
+    ZMPy = data.ZMPy   # Extract ZMPy
+    CoMx = data.CoMx   # Extract CoMx
+    CoMy = data.CoMy   # Extract CoMy
+    CoMz = data.CoMz   # Extract CoMz
 
-# Run the Foot Planer Algorithm and get the foot position 
-fp = ZMProbot.FootPlanner(; br = br, check = PLOT_RESULT)
+    # Reconstruct qref, ZMP, and CoM
+    qref = hcat(q1_l, q1_r, q2_l, q2_r)  # Reconstruct qref
+    ZMP = hcat(ZMPx, ZMPy)               # Reconstruct ZMP
+    CoM = hcat(CoMx, CoMy, CoMz)         # Reconstruct CoM
+else
+    # Construct the biped robot which store the geomtrical propreties and the path wanted 
+    br = ZMProbot.BipedRobot(;
+        readFile = true,
+        URDFfileName = robot_model,
+        paramFileName = "param.jl",
+    )
+    br.xPath = xPath;
+    br.yPath = yPath;
+    br.initial_position = [xPath[1], yPath[1], θ_0]
 
-# Get the ZMP reference trajectory 
-zt = ZMProbot.ZMPTrajectory(; br = br, fp = fp, check = PLOT_RESULT)
+    # Construct the Preview Controller
+    pc = ZMProbot.PreviewController(; br = br, check = PLOT_RESULT)
 
-# Convert the ZMP reference trajectory into CoM trajectory
-ct = ZMProbot.CoMTrajectory(; br = br, pc = pc, zt = zt, check = PLOT_RESULT)
+    # Run the Foot Planer Algorithm and get the foot position 
+    fp = ZMProbot.FootPlanner(; br = br, check = PLOT_RESULT)
 
-# Get the Swing Foot trajectory 
-sf = ZMProbot.SwingFootTrajectory(; br = br, fp = fp, zt = zt, check = PLOT_RESULT)
+    # Get the ZMP reference trajectory 
+    zt = ZMProbot.ZMPTrajectory(; br = br, fp = fp, check = PLOT_RESULT)
 
-# Get the joint trajectory from the all path 
-ik = ZMProbot.InverseKinematics(; br = br, fp = fp, ct = ct, sf = sf, check = PLOT_RESULT)
+    # Convert the ZMP reference trajectory into CoM trajectory
+    ct = ZMProbot.CoMTrajectory(; br = br, pc = pc, zt = zt, check = PLOT_RESULT)
 
-# Store into more convienant variables 
-qr = ik.q_r;
-ql = ik.q_l;
-qref = [ql[:, 1] qr[:, 1] ql[:, 2] qr[:, 2]]
+    # Get the Swing Foot trajectory 
+    sf = ZMProbot.SwingFootTrajectory(; br = br, fp = fp, zt = zt, check = PLOT_RESULT)
 
-CoM = reduce(hcat, ct.CoM)
-ZMP = reduce(hcat, zt.ZMP)
-tplot = reduce(vcat, zt.timeVec)
+    # Get the joint trajectory from the all path 
+    ik = ZMProbot.InverseKinematics(; br = br, fp = fp, ct = ct, sf = sf, check = PLOT_RESULT)
+
+    # Store into more convienant variables 
+    qr = ik.q_r;
+    ql = ik.q_l;
+    qref = [ql[:, 1] qr[:, 1] ql[:, 2] qr[:, 2]]
+
+    CoM = reduce(hcat, ct.CoM)
+    ZMP = reduce(hcat, zt.ZMP)
+    tplot = reduce(vcat, zt.timeVec)
+end
 
 ###########################################################
 #                  Simulation environement                #
@@ -139,5 +162,6 @@ ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);
 # Open the visulaiser and run the animation 
 if ANIMATE_RESULT
     open(vis)
+    sleep(10)
     MeshCatMechanisms.animate(vis, ts, qs)
 end
