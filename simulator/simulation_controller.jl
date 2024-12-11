@@ -11,6 +11,8 @@ using MeshCat, MeshCatMechanisms, Blink
 using MechanismGeometries
 using LaTeXStrings
 using DelimitedFiles
+using CSV
+using DataFrames
 
 ## Include and import the ZMP based controller 
 include(joinpath(@__DIR__, "..", "src", "ZMPBipedRobot.jl"))
@@ -21,7 +23,6 @@ ZMProbot = ZMPBipedRobot
 ###########################################################
 #                      Code parameters                    #
 ###########################################################
-PLOT_RESULT = false;
 
 ANIMATE_RESULT = true;
 
@@ -31,7 +32,9 @@ write_torques = false;
 
 ctrl = false;
 
-filename = joinpath(@__DIR__, "..", "data", "outputs", "opt_permutated_Torque.txt");
+data_from_CSV = false;
+
+filename = joinpath(@__DIR__, "..", "data", "outputs", "Torques_Xing_slow.txt");
 
 ###########################################################
 #                    Simulation parameters                #
@@ -75,51 +78,70 @@ foot = [0, 0]
 ZMProbot.set_nominal!(rs, vis, boom, actuators, foot)
 
 if(ctrl)
-    # Position control parameters
-    Kp = 10000.0
-    Ki = 100.0
-    Kd = 100.0
+    if(data_from_CSV)
+        data = CSV.read(joinpath(@__DIR__, "walkingPattern_ref_short.csv"), DataFrame)
+        # Extract data from the DataFrame
+        tplot = data.time  # Extract the time column
+        q1_l = data.q1_l   # Extract q1_l
+        q1_r = data.q1_r   # Extract q1_r
+        q2_l = data.q2_l   # Extract q2_l
+        q2_r = data.q2_r   # Extract q2_r
+        ZMPx = data.ZMPx   # Extract ZMPx
+        ZMPy = data.ZMPy   # Extract ZMPy
+        CoMx = data.CoMx   # Extract CoMx
+        CoMy = data.CoMy   # Extract CoMy
+        CoMz = data.CoMz   # Extract CoMz
+    
+        # Reconstruct qref, ZMP, and CoM
+        qref = hcat(q1_l, q1_r, q2_l, q2_r)  # Reconstruct qref
+        ZMP = hcat(ZMPx, ZMPy)               # Reconstruct ZMP
+        CoM = hcat(CoMx, CoMy, CoMz)         # Reconstruct CoM
+    else
+        # Position control parameters
+        Kp = 10000.0
+        Ki = 100.0
+        Kd = 100.0
 
-    ###########################################################
-    #                    ZMP based controller                 #
-    ###########################################################
-    # Construct the biped robot which store the geomtrical propreties and the path wanted 
-    br = ZMProbot.BipedRobot(;
-        readFile = true,
-        URDFfileName = robot_model,
-        paramFileName = "param.jl",
-    )
-    br.xPath = xPath;
-    br.yPath = yPath;
-    br.initial_position = [xPath[1], yPath[1], θ_0]
+        ###########################################################
+        #                    ZMP based controller                 #
+        ###########################################################
+        # Construct the biped robot which store the geomtrical propreties and the path wanted 
+        br = ZMProbot.BipedRobot(;
+            readFile = true,
+            URDFfileName = robot_model,
+            paramFileName = "param.jl",
+        )
+        br.xPath = xPath;
+        br.yPath = yPath;
+        br.initial_position = [xPath[1], yPath[1], θ_0]
 
-    # Construct the Preview Controller
-    pc = ZMProbot.PreviewController(; br = br, check = PLOT_RESULT)
+        # Construct the Preview Controller
+        pc = ZMProbot.PreviewController(; br = br, check = PLOT_RESULT)
 
-    # Run the Foot Planer Algorithm and get the foot position 
-    fp = ZMProbot.FootPlanner(; br = br, check = PLOT_RESULT)
+        # Run the Foot Planer Algorithm and get the foot position 
+        fp = ZMProbot.FootPlanner(; br = br, check = PLOT_RESULT)
 
-    # Get the ZMP reference trajectory 
-    zt = ZMProbot.ZMPTrajectory(; br = br, fp = fp, check = PLOT_RESULT)
+        # Get the ZMP reference trajectory 
+        zt = ZMProbot.ZMPTrajectory(; br = br, fp = fp, check = PLOT_RESULT)
 
-    # Convert the ZMP reference trajectory into CoM trajectory
-    ct = ZMProbot.CoMTrajectory(; br = br, pc = pc, zt = zt, check = PLOT_RESULT)
+        # Convert the ZMP reference trajectory into CoM trajectory
+        ct = ZMProbot.CoMTrajectory(; br = br, pc = pc, zt = zt, check = PLOT_RESULT)
 
-    # Get the Swing Foot trajectory 
-    sf = ZMProbot.SwingFootTrajectory(; br = br, fp = fp, zt = zt, check = PLOT_RESULT)
+        # Get the Swing Foot trajectory 
+        sf = ZMProbot.SwingFootTrajectory(; br = br, fp = fp, zt = zt, check = PLOT_RESULT)
 
-    # Get the joint trajectory from the all path 
-    ik = ZMProbot.InverseKinematics(; br = br, fp = fp, ct = ct, sf = sf, check = PLOT_RESULT)
+        # Get the joint trajectory from the all path 
+        ik = ZMProbot.InverseKinematics(; br = br, fp = fp, ct = ct, sf = sf, check = PLOT_RESULT)
 
-    # Store into more convienant variables 
-    qr = ik.q_r;
-    ql = ik.q_l;
-    qref = [ql[:, 1] qr[:, 1] ql[:, 2] qr[:, 2]]
+        # Store into more convienant variables 
+        qr = ik.q_r;
+        ql = ik.q_l;
+        qref = [ql[:, 1] qr[:, 1] ql[:, 2] qr[:, 2]]
 
-    CoM = reduce(hcat, ct.CoM)
-    ZMP = reduce(hcat, zt.ZMP)
-    tplot = reduce(vcat, zt.timeVec)
-
+        CoM = reduce(hcat, ct.CoM)
+        ZMP = reduce(hcat, zt.ZMP)
+        tplot = reduce(vcat, zt.timeVec)
+    end
     ###########################################################
     #                  Simulation environement                #
     ###########################################################
@@ -134,7 +156,7 @@ if(ctrl)
     controller! = ZMProbot.trajectory_controller!(rs, tplot, qref, Δt, Kp, Ki, Kd, filename, write_torques)
     ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);
 else
-    tend = 5.0
+    tend = 20.0
     # Simulate the robot
     controller! = ZMProbot.controller_torque_input_file(rs, tend, Δt, filename)
     ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);

@@ -280,8 +280,7 @@ function controller_torque_input_file(
     state = rs.state
     sim_index = 0
 
-    temp_τ = [0.0,0.0,0.0,0.0]
-
+    temp_τ = [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
     function controller!(τ, t, state)
         ddl = 2 # For 2 non-actuated foot 
 
@@ -290,12 +289,12 @@ function controller_torque_input_file(
                 lines = readlines(file)                          
                 if (sim_index < length(lines))                      
                     line = split(lines[sim_index+1] , " ")                                 
-                    temp_τ .= parse.(Float64, line[2:end])                                         
+                    temp_τ[(end - 3 - ddl):(end - ddl)] .= parse.(Float64, line[2:end])                                         
                 end
             end
             sim_index += 1
         end
-        τ[(end - 3 - ddl):(end - ddl)] .= temp_τ
+        τ .= temp_τ
 
         return nothing
     end
