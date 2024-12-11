@@ -16,10 +16,10 @@ data_out_Current = joinpath(@__DIR__, "..", "data", "Current.txt")
 data_out_Torque = joinpath(@__DIR__, "..", "data", "Torque.txt")
 data_out_extended_Torque = joinpath(@__DIR__, "..", "data", "Torques_LabV.txt")
 data_out_permutated_Torque = joinpath(@__DIR__, "..", "data", "Torques_simu.txt")
-data_Xing = joinpath(@__DIR__, "..", "data", "Torques_Xing.txt")
-data_out_opt_Torque = joinpath(@__DIR__, "..", "data", "opt_Torque.txt")
-data_out_opt_extended_Torque = joinpath(@__DIR__, "..", "data", "opt_extended_Torque.txt")
-data_out_opt_permutated_Torque = joinpath(@__DIR__, "..", "data", "opt_permutated_Torque.txt")
+data_Xing = joinpath(@__DIR__, "..", "data", "Torques_Xing_slow.txt")
+data_out_opt_Torque = joinpath(@__DIR__, "..", "data", "Torque_opt.txt")
+data_out_opt_extended_Torque = joinpath(@__DIR__, "..", "data", "Torque_opt_LabV.txt")
+data_out_opt_permutated_Torque = joinpath(@__DIR__, "..", "data", "Torques_opt_simu.txt")
 # frequency
 freq = 20.0
 
@@ -42,11 +42,11 @@ if(convert_to_torque)
     extend_data(data_out_Torque, data_out_extended_Torque,0.05,50,max_lines = 20001, remove_input_files)
 
     convert_data(data_out_PWM,data_out_velocity,data_out_opt_Torque,convert_to_torque_optimised_model, false, false)
-    extend_data(data_out_opt_Torque, data_out_opt_extended_Torque,0.05,50,max_lines = 20001, false) 
+    extend_data(data_out_opt_Torque, data_out_opt_extended_Torque,0.05,50,max_lines = 20001, remove_input_files) 
 end
 permutation = [(1,1,1.0),(2,2,-1.0),(3,4,-1.0),(4,3,1.0),(5,5,1.0)] # [HL,KL,HR,KR] (LabView) -> [HL,HR,FL,FR] (Code)
-column_permutation(data_out_extended_Torque,data_out_permutated_Torque,permutation)
-column_permutation(data_out_opt_extended_Torque,data_out_opt_permutated_Torque,permutation)
+column_permutation(data_out_extended_Torque,data_out_permutated_Torque,permutation, remove_input_files)
+column_permutation(data_out_opt_extended_Torque,data_out_opt_permutated_Torque,permutation, remove_input_files)
 
 interval = (0.0,20.0)
 plot_data(data_out_position, "Position",interval)

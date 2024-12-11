@@ -179,7 +179,7 @@ function extend_data(input_file::String, output_file::String, δt::Float64, ext_
     end
 end
 
-function column_permutation(input_file::String, output_file::String, permutation::Vector{Tuple{Int, Int,Float64}})
+function column_permutation(input_file::String, output_file::String, permutation::Vector{Tuple{Int, Int,Float64}}, remove_input_files::Bool)
     # Open the input and output files
     open(input_file, "r") do infile
         open(output_file, "w") do outfile
@@ -195,6 +195,9 @@ function column_permutation(input_file::String, output_file::String, permutation
                 write(outfile, join(permuted_row, " ") * "\n")
             end
         end
+    end
+    if(remove_input_files)
+        rm(input_file)
     end
 end
 
