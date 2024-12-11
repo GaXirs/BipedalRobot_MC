@@ -4,22 +4,22 @@ using LaTeXStrings
 include(joinpath(@__DIR__, "utils.jl"))
 
 # Data files to be preocessed
-data_in_position = joinpath(@__DIR__, "..", "data", "Position_20s.txt")
-data_in_velocity = joinpath(@__DIR__, "..", "data", "V_20s.txt")
-data_in_PWM = joinpath(@__DIR__, "..", "data", "PWM_20s.txt")
+data_in_position = joinpath(@__DIR__, "..", "data", "inputs", "Position_20s.txt")
+data_in_velocity = joinpath(@__DIR__, "..", "data", "inputs", "V_20s.txt")
+data_in_PWM = joinpath(@__DIR__, "..", "data",  "inputs", "PWM_20s.txt")
 
 # Output data files
-data_out_position = joinpath(@__DIR__, "..", "data", "Position.txt")
-data_out_velocity = joinpath(@__DIR__, "..", "data", "Velocity.txt")
-data_out_PWM = joinpath(@__DIR__, "..", "data", "PWM.txt")
-data_out_Current = joinpath(@__DIR__, "..", "data", "Current.txt")
-data_out_Torque = joinpath(@__DIR__, "..", "data", "Torque.txt")
-data_out_extended_Torque = joinpath(@__DIR__, "..", "data", "Torques_LabV.txt")
-data_out_permutated_Torque = joinpath(@__DIR__, "..", "data", "Torques_simu.txt")
-data_Xing = joinpath(@__DIR__, "..", "data", "Torques_Xing_slow.txt")
-data_out_opt_Torque = joinpath(@__DIR__, "..", "data", "Torque_opt.txt")
-data_out_opt_extended_Torque = joinpath(@__DIR__, "..", "data", "Torque_opt_LabV.txt")
-data_out_opt_permutated_Torque = joinpath(@__DIR__, "..", "data", "Torques_opt_simu.txt")
+data_out_position = joinpath(@__DIR__, "..", "data", "inputs", "Position.txt")
+data_out_velocity = joinpath(@__DIR__, "..", "data", "inputs","Velocity.txt")
+data_out_PWM = joinpath(@__DIR__, "..", "data", "inputs", "PWM.txt")
+data_out_Current = joinpath(@__DIR__, "..", "data", "outputs", "Current.txt")
+data_out_Torque = joinpath(@__DIR__, "..", "data", "outputs", "Torque.txt")
+data_out_extended_Torque = joinpath(@__DIR__, "..", "data", "outputs", "Torques_LabV.txt")
+data_out_permutated_Torque = joinpath(@__DIR__, "..", "data", "outputs", "Torques_simu.txt")
+data_Xing = joinpath(@__DIR__, "..", "data", "outputs", "Torques_Xing_slow.txt")
+data_out_opt_Torque = joinpath(@__DIR__, "..", "data", "outputs", "Torque_opt.txt")
+data_out_opt_extended_Torque = joinpath(@__DIR__, "..", "data", "outputs", "Torque_opt_LabV.txt")
+data_out_opt_permutated_Torque = joinpath(@__DIR__, "..", "data", "outputs", "Torques_opt_simu.txt")
 # frequency
 freq = 20.0
 

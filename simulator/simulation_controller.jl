@@ -31,7 +31,7 @@ write_torques = false;
 
 ctrl = false;
 
-filename = joinpath(@__DIR__, "..", "data", "opt_permutated_Torque.txt");
+filename = joinpath(@__DIR__, "..", "data", "outputs", "opt_permutated_Torque.txt");
 
 ###########################################################
 #                    Simulation parameters                #
