@@ -28,7 +28,7 @@ function transform_velocity(numbers::Vector{Int16}, frequency::Float64)::Vector{
     # The input data is an adimensionalisation of RPMs by 0.229rmp
     # To transform RMP into RPS (rotation per second), divide it by 60
     # Multiply then by 2π to get the rad/s
-    append!(result, numbers[2:end] .*0.229*2π / 60) 
+    append!(result, numbers[2:end] .*(0.229*2π / 60)) 
     
     return result
 end
@@ -47,37 +47,52 @@ end
 
 function convert_to_current_basic_model(PWM::Vector{Float64}, RPS::Vector{Float64}):: Vector{Float64}
     # Motor Caracteristics: S. Deligne 
-    Un  = 12      # Nominal tension [V]
-    kϕ  = 3.6103  # Back-EMF constant ke' [Nm*s/rad] (linked to joint speed)
-    R   = 9.3756  # Armature resistance [Ω]
-    HGR = 353.5   # Hip gear-ratio
-    KGR = 212.6   # Knee gear-ratio
+    Un  = 12          # Nominal tension [V]
+    R   = 9.3756      # Armature resistance [Ω]
+    HGR = 353.5       # Hip gear-ratio
+    KGR = 212.6       # Knee gear-ratio
+    kϕ  = 3.6103/HGR  # Back-EMF constant ke' [Nm*s/rad] (linked to joint speed)
 
-    # Simple motor model : U = R*i + kϕ ̇q -> i = (U - kϕ q̇)/R
+    # Simple motor model : U = R*i + kϕ ω -> i = (U - kϕ ω)/R
     U = PWM[2:end] .* Un
-    q̇ = RPS[2:end] ./ [HGR, KGR, HGR, KGR]
-    i = (U .- (q̇ .* kϕ)) ./ R
+    ω = RPS[2:end] .* [HGR, KGR, HGR, KGR] # ω = ̇q * GR
+    i = (U .- (ω .* kϕ)) ./ R
 
     return append!([PWM[1]],i)
 end
 
 function convert_to_torque_basic_model(current::Vector{Float64}, RPS::Vector{Float64}):: Vector{Float64}
     # Motor Caracteristics: S. Deligne
-    kϕ  = 3.6103  # Back-EMF constant ke' [Nm*s/rad] (linked to joint speed) 
-    HGR = 353.5   # Hip gear-ratio
-    KGR = 212.6   # Knee gear-ratio
-    Kv  = 0.22    # Viscous friction constant [Nm*s/rad] (linked to joint speed)
-    τc  = 0.128   # Dry friction torque [Nm]
+    HGR = 353.5         # Hip gear-ratio
+    KGR = 212.6         # Knee gear-ratio
+    Kv  = 0.22/HGR      # Viscous friction constant [Nm*s/rad] (linked to joint speed)
+    τc  = 0.128         # Dry friction torque [Nm]
+    kϕ  = 3.6103/HGR    # Back-EMF constant ke' [Nm*s/rad] (linked to joint speed) 
 
     # Simple motor model : τ = kϕ*i - τc - Kv q̇
-    q̇ = RPS[2:end] ./ [HGR, KGR, HGR, KGR]
-    τ_0 = current[2:end] .* kϕ .- q̇ .* Kv
-    τ = ifelse.(τ_0 .> 0, max.(τ_0 .- τc, 0.0), min.(τ_0 .+ τc, 0.0))
-    simu_τ = [τ[1], τ[2], τ[3], τ[4]] .* [1.0, 1.0, 1.0, 1.0]
-    return append!([current[1]],simu_τ)
+    ω = RPS[2:end] .* [HGR, KGR, HGR, KGR]
+    τ_0 = current[2:end].* [HGR, KGR, HGR, KGR] .* kϕ .- ω .* Kv
+    τ = ifelse.(τ_0 .> 0, max.(τ_0 .- τc, 0.0), min.(τ_0 .+ τc, 0.0)) # L1, L2, R1, R2
+    return append!([current[1]],τ)
 end
 
+function convert_to_torque_optimised_model(PWM::Vector{Float64}, RPS::Vector{Float64}):: Vector{Float64}
+    Un = 12.0
+    U = PWM[2:end] .* Un
+    # Motor Caracteristics: S. Deligne
+    HGR = 353.5           # Hip gear-ratio
+    KGR = 212.6           # Knee gear-ratio
+    ktp  = 0.395/HGR      # Torque constant with respect to the voltage [Nm/V] 
+    Kvp  = 1.589/HGR      # Viscous friction constant [Nm*s/rad] (linked to motor speed)
+    τc  = 0.065           # Dry friction torque [Nm]
 
+    # Simple motor model : τ = kt'*U - (τc + Kv'q̇) - C(q,q̇)
+    ω = RPS[2:end] .* [HGR, KGR, HGR, KGR]
+    τ_0 = U .* [HGR, KGR, HGR, KGR] .* ktp  .- ω .* Kvp
+    τ = ifelse.(τ_0 .> 0, max.(τ_0 .- τc, 0.0), min.(τ_0 .+ τc, 0.0))
+    
+    return append!([PWM[1]],τ)
+end
     
 function process_lines(input_file::String, output_file::String, func::Function, frequency::Float64, remove_input_file::Bool)
     open(input_file, "r") do infile
@@ -164,6 +179,25 @@ function extend_data(input_file::String, output_file::String, δt::Float64, ext_
     end
 end
 
+function column_permutation(input_file::String, output_file::String, permutation::Vector{Tuple{Int, Int,Float64}})
+    # Open the input and output files
+    open(input_file, "r") do infile
+        open(output_file, "w") do outfile
+            for line in eachline(infile)
+                # Parse the input line into columns (assume space-separated values)
+                columns = parse.(Float64, split(line, " "))
+                # Create a new row with permuted columns
+                permuted_row = zeros(Float64, length(columns))
+                for (source_col, target_col,sign) in permutation
+                    permuted_row[target_col] = columns[source_col]*sign
+                end
+                # Write the permuted row to the output file
+                write(outfile, join(permuted_row, " ") * "\n")
+            end
+        end
+    end
+end
+
 function plot_data(file_path::String, title::String, time_range::Union{Nothing, Tuple{Float64, Float64}} = nothing)
     # Read the file line by line
     lines = readlines(file_path)
@@ -201,6 +235,5 @@ function plot_data(file_path::String, title::String, time_range::Union{Nothing, 
     # Add title
     title!(p, title)
 
-    # Ensure the plot is displayed
-    display(p)
+    savefig(joinpath(@__DIR__, "..", "data", "Images", title * ".png"))  # Save as PNG
 end

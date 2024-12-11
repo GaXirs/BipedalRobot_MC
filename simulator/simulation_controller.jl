@@ -31,7 +31,7 @@ write_torques = false;
 
 ctrl = false;
 
-filename = joinpath(@__DIR__, "..", "data", "torques.txt");
+filename = joinpath(@__DIR__, "..", "data", "opt_permutated_Torque.txt");
 
 ###########################################################
 #                    Simulation parameters                #
@@ -134,7 +134,7 @@ if(ctrl)
     controller! = ZMProbot.trajectory_controller!(rs, tplot, qref, Δt, Kp, Ki, Kd, filename, write_torques)
     ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);
 else
-    tend = 20.0
+    tend = 5.0
     # Simulate the robot
     controller! = ZMProbot.controller_torque_input_file(rs, tend, Δt, filename)
     ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);
@@ -142,5 +142,6 @@ end
 # Open the visulaiser and run the animation 
 if ANIMATE_RESULT
     open(vis)
+    sleep(10)
     MeshCatMechanisms.animate(vis, ts, qs)
 end
