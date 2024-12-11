@@ -11,6 +11,8 @@ using MeshCat, MeshCatMechanisms, Blink
 using MechanismGeometries
 using LaTeXStrings
 using DelimitedFiles
+using CSV
+using DataFrames
 
 ## Include and import the ZMP based controller 
 include(joinpath(@__DIR__, "..", "src", "ZMPBipedRobot.jl"))

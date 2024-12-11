@@ -232,7 +232,6 @@ function trajectory_controller!(
 
     τ_file = [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
     temp_τ = [0.0,0.0,0.0,0.0]
-
     function controller!(τ, t, state)
         ddl = 2 # For 2 non-actuated foot 
         stop = false
@@ -295,6 +294,7 @@ function trajectory_controller!(
             push!(rs.torques, τ_file)
             measureZMP(rs, dynamics_results, state)
         end
+        τ = τ_file
         if (t >= time[index] && stop == false)
             index = index + 1
         end
