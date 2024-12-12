@@ -1,4 +1,6 @@
 using LaTeXStrings
+using CSV
+using DataFrames
 
 function toInt16(numbers::Vector{Int})::Vector{Int16}
     # We assume numbers are 16-bit unsigned integers (UInt16), reinterpret them to Int16
