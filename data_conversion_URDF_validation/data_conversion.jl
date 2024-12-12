@@ -23,7 +23,7 @@ data_out_opt_permutated_Torque = joinpath(@__DIR__, "..", "data", "outputs", "To
 # frequency
 freq = 20.0
 
-remove_input_files = true # remove raw data files (Current.txt, Torque.txt)
+remove_input_files = false # remove raw data files (Current.txt, Torque.txt)
 process_input_files_LabView = false # To generate Position.txt, Velocity.txt and PWM.txt
 convert_to_torque = true
 
@@ -55,3 +55,5 @@ plot_data(data_out_velocity, "Velocity",interval)
 plot_data(data_out_PWM, "PWM",interval)
 plot_data(data_Xing, "Torques_Xing",interval)
 plot_data(data_out_opt_permutated_Torque,"Opt_Perm_Torque",interval)
+
+subsample_csv(joinpath(@__DIR__, "..", "simulator", "walkingPattern_ref_short.csv"), 2,joinpath(@__DIR__, "..", "simulator", "walkingPattern_ref_subsampled.csv") )

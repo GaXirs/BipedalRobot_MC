@@ -30,9 +30,9 @@ MODEL_2D = true;
 
 write_torques = false;
 
-ctrl = false;
+ctrl = true;
 
-data_from_CSV = false;
+data_from_CSV = true;
 
 filename = joinpath(@__DIR__, "..", "data", "outputs", "Torques_Xing_slow.txt");
 
@@ -78,8 +78,12 @@ foot = [0, 0]
 ZMProbot.set_nominal!(rs, vis, boom, actuators, foot)
 
 if(ctrl)
+    # Position control parameters
+    Kp = 10000.0
+    Ki = 100.0
+    Kd = 100.0
     if(data_from_CSV)
-        data = CSV.read(joinpath(@__DIR__, "walkingPattern_ref_short.csv"), DataFrame)
+        data = CSV.read(joinpath(@__DIR__, "walkingPattern_ref_subsampled.csv"), DataFrame)
         # Extract data from the DataFrame
         tplot = data.time  # Extract the time column
         q1_l = data.q1_l   # Extract q1_l
@@ -97,10 +101,6 @@ if(ctrl)
         ZMP = hcat(ZMPx, ZMPy)               # Reconstruct ZMP
         CoM = hcat(CoMx, CoMy, CoMz)         # Reconstruct CoM
     else
-        # Position control parameters
-        Kp = 10000.0
-        Ki = 100.0
-        Kd = 100.0
 
         ###########################################################
         #                    ZMP based controller                 #

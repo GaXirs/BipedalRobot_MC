@@ -240,3 +240,20 @@ function plot_data(file_path::String, title::String, time_range::Union{Nothing, 
 
     savefig(joinpath(@__DIR__, "..", "data", "Images", title * ".png"))  # Save as PNG
 end
+
+function subsample_csv(input_file::String, subsampling_factor::Int, output_file::String)
+    if subsampling_factor < 1
+        error("Subsampling factor must be a positive integer.")
+    end
+
+    # Read the input CSV file into a DataFrame
+    df = CSV.read(input_file, DataFrame)
+
+    # Subsample the DataFrame
+    subsampled_df = df[1:subsampling_factor:end, :]
+
+    # Write the subsampled data to the output file
+    CSV.write(output_file, subsampled_df)
+
+    println("Subsampled data written to: $output_file")
+end
