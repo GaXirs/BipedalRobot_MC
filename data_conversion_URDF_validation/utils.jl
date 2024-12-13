@@ -47,6 +47,18 @@ function transform_PWM(numbers::Vector{Int16}, frequency::Float64)::Vector{Float
     return result
 end
 
+function transform_current(numbers::Vector{Int16}, frequency::Float64)::Vector{Float64}
+    # The first element of each line is the index of the data (beginning at 0)
+    # Divide this value by the frequency to get time
+    result = [numbers[1] / frequency]  
+    
+    # Transform to PWM [%]
+    # A PWM of 100% corresponf to 885 -> we just need to divide what we have by 885
+    append!(result, numbers[2:end] .*(2.69/1000))
+
+    return result
+end
+
 function convert_to_current_basic_model(PWM::Vector{Float64}, RPS::Vector{Float64}):: Vector{Float64}
     # Motor Caracteristics: S. Deligne 
     Un  = 12          # Nominal tension [V]
