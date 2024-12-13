@@ -5,8 +5,8 @@ F1 = false # Slow_Exp1_08_12_2024   # Feet on the ground
 F2 = false # Ctrl_Xing
 F3 = false # Walking_Patterns
 F4 = false # Slow_LegByLeg          # Feet in the air
-F5 = false # Slow_Exp2_13_12_2024   # Feet in the air
-F6 = true  # Slow_Exp3_13_12_2024
+F5 = true # Slow_Exp2_13_12_2024   # Feet in the air
+F6 = false  # Slow_Exp3_13_12_2024
 
 include(joinpath(@__DIR__, "utils.jl"))
 

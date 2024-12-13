@@ -116,9 +116,8 @@ function convert_to_torque_optimised_model(PWM::Vector{Float64}, RPS::Vector{Flo
     # Simple motor model : τ = kt'*U - (τc + Kv'q̇) - C(q,q̇)
     ω = RPS[2:end] .* [HGR, KGR, HGR, KGR]
     τ_0 = U .* [HGR, KGR, HGR, KGR] .* ktp  .- ω .* Kvp
-    τ = ifelse.(τ_0 .> 0, max.(τ_0 .- τc, 0.0), min.(τ_0 .+ τc, 0.0))
-    
-    return append!([PWM[1]],τ)
+    #τ = ifelse.(τ_0 .> 0, max.(τ_0 .- τc, 0.0), min.(τ_0 .+ τc, 0.0))
+    return append!([PWM[1]],τ_0)
 end
     
 function process_lines(input_file::String, output_file::String, func::Function, frequency::Float64, remove_input_file::Bool)
