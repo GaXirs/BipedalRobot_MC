@@ -30,11 +30,11 @@ MODEL_2D = true;
 
 write_torques = false;
 
-ctrl = true;
+ctrl = false;
 
-data_from_CSV = true;
+data_from_CSV = false;
 
-filename = joinpath(@__DIR__, "..", "data", "outputs", "Torques_Xing_slow.txt");
+filename = joinpath(@__DIR__, "..", "data", "Slow_LegByLeg", "Outputs", "Torques_opt_simu.txt");
 
 ###########################################################
 #                    Simulation parameters                #
@@ -64,7 +64,7 @@ rs = ZMProbot.RobotSimulator(;
     fileName = robot_model,
     symbolic = false,
     add_contact_points = true,
-    add_gravity = true,
+    add_gravity = false,
     add_flat_ground = true,
 );
 
@@ -83,7 +83,7 @@ if(ctrl)
     Ki = 100.0
     Kd = 100.0
     if(data_from_CSV)
-        data = CSV.read(joinpath(@__DIR__, "walkingPattern_ref_subsampled.csv"), DataFrame)
+        data = CSV.read(joinpath(@__DIR__, "..", "data", "Walking_Patterns", "walkingPattern_ref_subsampled.csv"), DataFrame)
         # Extract data from the DataFrame
         tplot = data.time  # Extract the time column
         q1_l = data.q1_l   # Extract q1_l

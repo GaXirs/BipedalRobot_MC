@@ -203,7 +203,7 @@ function column_permutation(input_file::String, output_file::String, permutation
     end
 end
 
-function plot_data(file_path::String, title::String, time_range::Union{Nothing, Tuple{Float64, Float64}} = nothing)
+function plot_data(file_path::String, Folder::String, title::String, time_range::Union{Nothing, Tuple{Float64, Float64}} = nothing)
     # Read the file line by line
     lines = readlines(file_path)
 
@@ -240,7 +240,7 @@ function plot_data(file_path::String, title::String, time_range::Union{Nothing, 
     # Add title
     title!(p, title)
 
-    savefig(joinpath(@__DIR__, "..", "data", "Images", title * ".png"))  # Save as PNG
+    savefig(joinpath(Folder, title * ".png"))  # Save as PNG
 end
 
 function subsample_csv(input_file::String, subsampling_factor::Int, output_file::String)
@@ -258,4 +258,39 @@ function subsample_csv(input_file::String, subsampling_factor::Int, output_file:
     CSV.write(output_file, subsampled_df)
 
     println("Subsampled data written to: $output_file")
+end
+
+function sum_files(file1_path::String, file2_path::String, output_path::String)
+    # Open the two files for reading
+    file1 = open(file1_path, "r")
+    file2 = open(file2_path, "r")
+    
+    # Create an output file for writing
+    output_file = open(output_path, "w")
+    
+    # Loop through the lines of both files
+    while !eof(file1) && !eof(file2)
+        # Read a line from each file
+        line1 = readline(file1)
+        line2 = readline(file2)
+        
+        # Split the lines into arrays of numbers
+        values1 = parse.(Float64, split(line1))
+        values2 = parse.(Float64, split(line2))
+        
+        # Assuming each line has the form: t D1 D2 0 0 and t 0 0 D3 D4
+        t, D1, D2, _, _ = values1
+        _, _, _, D3, D4 = values2
+        
+        # Sum the corresponding values
+        sum_line = "$t $D1 $D2 $D3 $D4\n"
+        
+        # Write the summed line to the output file
+        write(output_file, sum_line)
+    end
+    
+    # Close the files
+    close(file1)
+    close(file2)
+    close(output_file)
 end
