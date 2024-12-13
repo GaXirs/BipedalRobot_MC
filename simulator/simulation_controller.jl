@@ -34,7 +34,7 @@ ctrl = false;
 
 data_from_CSV = false;
 
-filename = joinpath(@__DIR__, "..", "data", "Slow_LegByLeg", "Outputs", "Torques_opt_simu.txt");
+filename = joinpath(@__DIR__, "..", "data", "Slow_Exp3_13_12_2024", "Outputs", "Torques_opt_simu.txt");
 
 ###########################################################
 #                    Simulation parameters                #
@@ -64,7 +64,7 @@ rs = ZMProbot.RobotSimulator(;
     fileName = robot_model,
     symbolic = false,
     add_contact_points = true,
-    add_gravity = false,
+    add_gravity = true,
     add_flat_ground = true,
 );
 

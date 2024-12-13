@@ -1,11 +1,12 @@
 using Plots
 using LaTeXStrings
 
-F1 = false # Slow_Exp1_08_12_2024
+F1 = false # Slow_Exp1_08_12_2024   # Feet on the ground
 F2 = false # Ctrl_Xing
 F3 = false # Walking_Patterns
-F4 = false # Slow_LegByLeg
-F5 = true  # Slow_Exp2_13_12_2024
+F4 = false # Slow_LegByLeg          # Feet in the air
+F5 = false # Slow_Exp2_13_12_2024   # Feet in the air
+F6 = true  # Slow_Exp3_13_12_2024
 
 include(joinpath(@__DIR__, "utils.jl"))
 
@@ -203,14 +204,21 @@ if(F5)
     data_out_position = joinpath(@__DIR__, "..", "data", "Slow_Exp2_13_12_2024", "Inputs", "Position.txt")
     data_out_velocity = joinpath(@__DIR__, "..", "data", "Slow_Exp2_13_12_2024", "Inputs","Velocity.txt")
     data_out_PWM = joinpath(@__DIR__, "..", "data", "Slow_Exp2_13_12_2024", "Inputs", "PWM.txt")
+    
     data_out_real_current = joinpath(@__DIR__, "..", "data", "Slow_Exp2_13_12_2024", "Inputs", "Current.txt")
     data_out_Current = joinpath(@__DIR__, "..", "data", "Slow_Exp2_13_12_2024", "Outputs", "Current.txt")
+    
     data_out_Torque = joinpath(@__DIR__, "..", "data", "Slow_Exp2_13_12_2024", "Outputs", "Torque.txt")
     data_out_extended_Torque = joinpath(@__DIR__, "..", "data", "Slow_Exp2_13_12_2024", "Outputs", "Torques_LabV.txt")
     data_out_permutated_Torque = joinpath(@__DIR__, "..", "data", "Slow_Exp2_13_12_2024", "Outputs", "Torques_simu.txt")
+    
     data_out_opt_Torque = joinpath(@__DIR__, "..", "data", "Slow_Exp2_13_12_2024", "Outputs", "Torque_opt.txt")
     data_out_opt_extended_Torque = joinpath(@__DIR__, "..", "data", "Slow_Exp2_13_12_2024", "Outputs", "Torque_opt_LabV.txt")
     data_out_opt_permutated_Torque = joinpath(@__DIR__, "..", "data", "Slow_Exp2_13_12_2024", "Outputs", "Torques_opt_simu.txt")
+
+    data_out_real_Torque = joinpath(@__DIR__, "..", "data", "Slow_Exp2_13_12_2024", "Outputs", "Real_Torques.txt")
+    data_out_real_extended_Torque = joinpath(@__DIR__, "..", "data", "Slow_Exp2_13_12_2024", "Outputs", "Real_ext_Torques.txt")
+    data_out_real_permutated_Torque = joinpath(@__DIR__, "..", "data", "Slow_Exp2_13_12_2024", "Outputs", "Real_perm_Torque_opt.txt")
 
     # File details
     freq = 50.0                                         # Frequency
@@ -243,6 +251,7 @@ if(F5)
         convert_data(data_out_PWM, data_out_velocity, data_out_Current, convert_to_current_basic_model, false, false)
         convert_data(data_out_Current, data_out_velocity, data_out_Torque, convert_to_torque_basic_model, remove_input_files, false)
         convert_data(data_out_PWM,data_out_velocity,data_out_opt_Torque,convert_to_torque_optimised_model, false, false)
+        convert_data(data_out_real_current, data_out_velocity, data_out_real_Torque, convert_to_torque_nofriction_model, false, false)
     end
     if(extend_the_data)
         extend_data(data_out_Torque, data_out_extended_Torque,Δt,extension_factor,max_lines = max_lines, remove_input_files)
@@ -262,5 +271,89 @@ if(F5)
         plot_data(data_out_opt_permutated_Torque, Folder, "Opt_Perm_Torque",interval)
         plot_data(data_out_real_current, Folder, "Real Current", interval)
         plot_data(data_out_Current, Folder, "Computed Current", interval)
+        plot_data(data_out_real_Torque, Folder, "Real Torque", interval)
+    end
+end
+
+# FLODER 6: Slow_Exp3_13_12_2024
+if(F6)
+    # Input data files
+    data_in_position = joinpath(@__DIR__, "..", "data", "Slow_Exp3_13_12_2024", "Raw", "Position.txt")
+    data_in_velocity = joinpath(@__DIR__, "..", "data", "Slow_Exp3_13_12_2024", "Raw", "Velocity.txt")
+    data_in_PWM = joinpath(@__DIR__, "..", "data", "Slow_Exp3_13_12_2024", "Raw", "PWM.txt")
+    data_in_current = joinpath(@__DIR__, "..", "data", "Slow_Exp3_13_12_2024", "Raw", "Current.txt")
+
+    # Output data files
+    data_out_position = joinpath(@__DIR__, "..", "data", "Slow_Exp3_13_12_2024", "Inputs", "Position.txt")
+    data_out_velocity = joinpath(@__DIR__, "..", "data", "Slow_Exp3_13_12_2024", "Inputs","Velocity.txt")
+    data_out_PWM = joinpath(@__DIR__, "..", "data", "Slow_Exp3_13_12_2024", "Inputs", "PWM.txt")
+    
+    data_out_real_current = joinpath(@__DIR__, "..", "data", "Slow_Exp3_13_12_2024", "Inputs", "Current.txt")
+    data_out_Current = joinpath(@__DIR__, "..", "data", "Slow_Exp3_13_12_2024", "Outputs", "Current.txt")
+    
+    data_out_Torque = joinpath(@__DIR__, "..", "data", "Slow_Exp3_13_12_2024", "Outputs", "Torque.txt")
+    data_out_extended_Torque = joinpath(@__DIR__, "..", "data", "Slow_Exp3_13_12_2024", "Outputs", "Torques_LabV.txt")
+    data_out_permutated_Torque = joinpath(@__DIR__, "..", "data", "Slow_Exp3_13_12_2024", "Outputs", "Torques_simu.txt")
+    
+    data_out_opt_Torque = joinpath(@__DIR__, "..", "data", "Slow_Exp3_13_12_2024", "Outputs", "Torque_opt.txt")
+    data_out_opt_extended_Torque = joinpath(@__DIR__, "..", "data", "Slow_Exp3_13_12_2024", "Outputs", "Torque_opt_LabV.txt")
+    data_out_opt_permutated_Torque = joinpath(@__DIR__, "..", "data", "Slow_Exp3_13_12_2024", "Outputs", "Torques_opt_simu.txt")
+
+    data_out_real_Torque = joinpath(@__DIR__, "..", "data", "Slow_Exp3_13_12_2024", "Outputs", "Real_Torques.txt")
+    data_out_real_extended_Torque = joinpath(@__DIR__, "..", "data", "Slow_Exp3_13_12_2024", "Outputs", "Real_ext_Torques.txt")
+    data_out_real_permutated_Torque = joinpath(@__DIR__, "..", "data", "Slow_Exp3_13_12_2024", "Outputs", "Real_perm_Torque_opt.txt")
+
+    # File details
+    freq = 50.0                                         # Frequency
+    interval = (0.0,20.0)                               # Plot interval
+    permutation_raw = [(1,1,1.0),(2,4,1.0),             # The right leg input has been written in the left leg column
+                    (3,5,1.0),(4,2,1.0),(5,3,1.0)]
+    permutation = [(1,1,1.0),(2,2,1.0),                # [t,HL,KL,HR,KR] (LabView) -> [t,HL,HR,FL,FR] (Code)
+                    (3,4,1.0),(4,3,-1.0),(5,5,-1.0)]     # H = Hip, K = Knee, R = Right, L = Left, t = Time
+    Δt = 0.02                                           # 1/Frequency
+    extension_factor = 20                               # Padding between two values
+    max_lines = 20001
+    Folder = joinpath(@__DIR__, "..", "data", "Slow_Exp3_13_12_2024", "Images")
+
+    remove_input_files          = false  # Remove raw data files (Current.txt, Torque.txt)
+    process_input_files_LabView = true  # Generate Position.txt, Velocity.txt and PWM.txt
+    convert_to_torque           = true   # Generate all outputs 
+    extend_the_data             = true   # Allows for padding up to max_lines elements
+    permute_columns             = true   # Enable column permutation (simu and robot coherence)
+    to_plot                     = true   # Enables plots
+
+    # File Operations
+    if(process_input_files_LabView)
+        process_lines(data_in_position, data_out_position, transform_position, freq, false)
+        process_lines(data_in_velocity, data_out_velocity, transform_velocity, freq, false)
+        process_lines(data_in_PWM, data_out_PWM, transform_PWM, freq, false)
+        process_lines(data_in_current, data_out_real_current, transform_current, freq, false)
+    end
+
+    if(convert_to_torque)
+        convert_data(data_out_PWM, data_out_velocity, data_out_Current, convert_to_current_basic_model, false, false)
+        convert_data(data_out_Current, data_out_velocity, data_out_Torque, convert_to_torque_basic_model, remove_input_files, false)
+        convert_data(data_out_PWM,data_out_velocity,data_out_opt_Torque,convert_to_torque_optimised_model, false, false)
+        convert_data(data_out_real_current, data_out_velocity, data_out_real_Torque, convert_to_torque_nofriction_model, false, false)
+    end
+    if(extend_the_data)
+        extend_data(data_out_Torque, data_out_extended_Torque,Δt,extension_factor,max_lines = max_lines, remove_input_files)
+        extend_data(data_out_opt_Torque, data_out_opt_extended_Torque,Δt,extension_factor,max_lines = max_lines, remove_input_files) 
+    end
+    if(permute_columns)
+        column_permutation(data_out_extended_Torque,data_out_permutated_Torque,permutation, remove_input_files)
+        column_permutation(data_out_opt_extended_Torque,data_out_opt_permutated_Torque,permutation, remove_input_files)
+    end
+
+    # Figure plotting
+    if(to_plot)
+        plot_data(data_out_position, Folder, "Position",interval)
+        plot_data(data_out_permutated_Torque, Folder, "Perm_Torque",interval)
+        plot_data(data_out_velocity, Folder, "Velocity",interval)
+        plot_data(data_out_PWM, Folder, "PWM",interval)
+        plot_data(data_out_opt_permutated_Torque, Folder, "Opt_Perm_Torque",interval)
+        plot_data(data_out_real_current, Folder, "Real Current", interval)
+        plot_data(data_out_Current, Folder, "Computed Current", interval)
+        plot_data(data_out_real_Torque, Folder, "Real Torque", interval)
     end
 end

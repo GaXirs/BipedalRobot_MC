@@ -75,6 +75,19 @@ function convert_to_current_basic_model(PWM::Vector{Float64}, RPS::Vector{Float6
     return append!([PWM[1]],i)
 end
 
+function convert_to_torque_nofriction_model(current::Vector{Float64}, RPS::Vector{Float64}):: Vector{Float64}
+    # Motor Caracteristics: S. Deligne
+    HGR = 353.5         # Hip gear-ratio
+    KGR = 212.6         # Knee gear-ratio
+    Kv  = 0.22/HGR      # Viscous friction constant [Nm*s/rad] (linked to joint speed)
+    τc  = 0.128         # Dry friction torque [Nm]
+    kϕ  = 3.6103/HGR    # Back-EMF constant ke' [Nm*s/rad] (linked to joint speed) 
+
+    # Simple motor model : τ = kϕ*i
+    τ_0 = current[2:end].* [HGR, KGR, HGR, KGR] .* kϕ
+    return append!([current[1]],τ_0)
+end
+
 function convert_to_torque_basic_model(current::Vector{Float64}, RPS::Vector{Float64}):: Vector{Float64}
     # Motor Caracteristics: S. Deligne
     HGR = 353.5         # Hip gear-ratio
