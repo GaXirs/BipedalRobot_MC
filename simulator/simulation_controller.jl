@@ -63,8 +63,8 @@ end
 rs = ZMProbot.RobotSimulator(;
     fileName = robot_model,
     symbolic = false,
-    add_contact_points = true,
-    add_gravity = true,
+    add_contact_points = false,
+    add_gravity = false,
     add_flat_ground = true,
 );
 
@@ -156,7 +156,7 @@ if(ctrl)
     controller! = ZMProbot.trajectory_controller!(rs, tplot, qref, Δt, Kp, Ki, Kd, filename, write_torques)
     ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);
 else
-    tend = 20.0
+    tend = 5.0
     # Simulate the robot
     controller! = ZMProbot.controller_torque_input_file(rs, tend, Δt, filename)
     ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);

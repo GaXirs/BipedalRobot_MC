@@ -54,14 +54,14 @@ function transform_current(numbers::Vector{Int16}, frequency::Float64)::Vector{F
     
     # Transform to PWM [%]
     # A PWM of 100% corresponf to 885 -> we just need to divide what we have by 885
-    append!(result, numbers[2:end] .*(2.69/1000))
+    append!(result, numbers[2:end] .*(2.69/1000.0))
 
     return result
 end
 
 function convert_to_current_basic_model(PWM::Vector{Float64}, RPS::Vector{Float64}):: Vector{Float64}
     # Motor Caracteristics: S. Deligne 
-    Un  = 12          # Nominal tension [V]
+    Un  = 12.0          # Nominal tension [V]
     R   = 9.3756      # Armature resistance [Ω]
     HGR = 353.5       # Hip gear-ratio
     KGR = 212.6       # Knee gear-ratio
@@ -84,7 +84,7 @@ function convert_to_torque_nofriction_model(current::Vector{Float64}, RPS::Vecto
     kϕ  = 3.6103/HGR    # Back-EMF constant ke' [Nm*s/rad] (linked to joint speed) 
 
     # Simple motor model : τ = kϕ*i
-    τ_0 = current[2:end].* [HGR, KGR, HGR, KGR] .* kϕ
+    τ_0 = current[2:end] .* [HGR, KGR, HGR, KGR] .* kϕ
     return append!([current[1]],τ_0)
 end
 
@@ -98,7 +98,7 @@ function convert_to_torque_basic_model(current::Vector{Float64}, RPS::Vector{Flo
 
     # Simple motor model : τ = kϕ*i - τc - Kv q̇
     ω = RPS[2:end] .* [HGR, KGR, HGR, KGR]
-    τ_0 = current[2:end].* [HGR, KGR, HGR, KGR] .* kϕ .- ω .* Kv
+    τ_0 = current[2:end] .* [HGR, KGR, HGR, KGR] .* kϕ .- ω .* Kv
     τ = ifelse.(τ_0 .> 0, max.(τ_0 .- τc, 0.0), min.(τ_0 .+ τc, 0.0)) # L1, L2, R1, R2
     return append!([current[1]],τ)
 end

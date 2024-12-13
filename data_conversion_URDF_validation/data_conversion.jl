@@ -5,8 +5,9 @@ F1 = false # Slow_Exp1_08_12_2024   # Feet on the ground
 F2 = false # Ctrl_Xing
 F3 = false # Walking_Patterns
 F4 = false # Slow_LegByLeg          # Feet in the air
-F5 = true # Slow_Exp2_13_12_2024   # Feet in the air
+F5 = false # Slow_Exp2_13_12_2024   # Feet in the air
 F6 = false  # Slow_Exp3_13_12_2024
+F7 = true
 
 include(joinpath(@__DIR__, "utils.jl"))
 
@@ -225,8 +226,8 @@ if(F5)
     interval = (0.0,20.0)                               # Plot interval
     permutation_raw = [(1,1,1.0),(2,4,1.0),             # The right leg input has been written in the left leg column
                     (3,5,1.0),(4,2,1.0),(5,3,1.0)]
-    permutation = [(1,1,1.0),(2,2,1.0),                # [t,HL,KL,HR,KR] (LabView) -> [t,HL,HR,FL,FR] (Code)
-                    (3,4,1.0),(4,3,1.0),(5,5,1.0)]     # H = Hip, K = Knee, R = Right, L = Left, t = Time
+    permutation = [(1,1,1.0),(2,2,-1.0),                # [t,HL,KL,HR,KR] (LabView) -> [t,HL,HR,FL,FR] (Code)
+                    (3,4,-1.0),(4,3,1.0),(5,5,1.0)]     # H = Hip, K = Knee, R = Right, L = Left, t = Time
     Δt = 0.02                                           # 1/Frequency
     extension_factor = 20                               # Padding between two values
     max_lines = 20001
@@ -256,10 +257,12 @@ if(F5)
     if(extend_the_data)
         extend_data(data_out_Torque, data_out_extended_Torque,Δt,extension_factor,max_lines = max_lines, remove_input_files)
         extend_data(data_out_opt_Torque, data_out_opt_extended_Torque,Δt,extension_factor,max_lines = max_lines, remove_input_files) 
+        extend_data(data_out_real_Torque, data_out_real_extended_Torque,Δt,extension_factor,max_lines = max_lines, remove_input_files) 
     end
     if(permute_columns)
         column_permutation(data_out_extended_Torque,data_out_permutated_Torque,permutation, remove_input_files)
         column_permutation(data_out_opt_extended_Torque,data_out_opt_permutated_Torque,permutation, remove_input_files)
+        column_permutation(data_out_real_extended_Torque, data_out_real_permutated_Torque, permutation, remove_input_files)
     end
 
     # Figure plotting
@@ -272,6 +275,7 @@ if(F5)
         plot_data(data_out_real_current, Folder, "Real Current", interval)
         plot_data(data_out_Current, Folder, "Computed Current", interval)
         plot_data(data_out_real_Torque, Folder, "Real Torque", interval)
+        plot_data(data_out_real_permutated_Torque, Folder, "Real Permutated Torque", interval)
     end
 end
 
@@ -354,6 +358,60 @@ if(F6)
         plot_data(data_out_opt_permutated_Torque, Folder, "Opt_Perm_Torque",interval)
         plot_data(data_out_real_current, Folder, "Real Current", interval)
         plot_data(data_out_Current, Folder, "Computed Current", interval)
+        plot_data(data_out_real_Torque, Folder, "Real Torque", interval)
+    end
+end
+
+# FLODER 6: Slow_Exp3_13_12_2024
+if(F7)
+    # Input data files
+    data_in_current = joinpath(@__DIR__, "..", "data", "New_motor", "Raw", "Current.txt")
+
+    # Output data files
+    data_out_real_current = joinpath(@__DIR__, "..", "data", "New_motor", "Inputs", "Current.txt")
+
+    data_out_real_Torque = joinpath(@__DIR__, "..", "data", "New_motor", "Outputs", "Real_Torques.txt")
+    data_out_real_extended_Torque = joinpath(@__DIR__, "..", "data", "New_motor", "Outputs", "Real_ext_Torques.txt")
+    data_out_real_permutated_Torque = joinpath(@__DIR__, "..", "data", "New_motor", "Outputs", "Real_perm_Torque_opt.txt")
+
+    # File details
+    freq = 50.0                                         # Frequency
+    interval = (0.0,20.0)                               # Plot interval
+    permutation_raw = [(1,1,1.0),(2,4,1.0),             # The right leg input has been written in the left leg column
+                    (3,5,1.0),(4,2,1.0),(5,3,1.0)]
+    permutation = [(1,1,1.0),(2,2,1.0),                # [t,HL,KL,HR,KR] (LabView) -> [t,HL,HR,FL,FR] (Code)
+                    (3,4,1.0),(4,3,-1.0),(5,5,-1.0)]     # H = Hip, K = Knee, R = Right, L = Left, t = Time
+    Δt = 0.02                                           # 1/Frequency
+    extension_factor = 20                               # Padding between two values
+    max_lines = 20001
+    Folder = joinpath(@__DIR__, "..", "data", "New_motor", "Images")
+
+    remove_input_files          = false  # Remove raw data files (Current.txt, Torque.txt)
+    process_input_files_LabView = true  # Generate Position.txt, Velocity.txt and PWM.txt
+    convert_to_torque           = true   # Generate all outputs 
+    extend_the_data             = true   # Allows for padding up to max_lines elements
+    permute_columns             = true   # Enable column permutation (simu and robot coherence)
+    to_plot                     = true   # Enables plots
+
+    # File Operations
+    if(process_input_files_LabView)
+        process_lines(data_in_current, data_out_real_current, transform_current, freq, false)
+    end
+
+    if(convert_to_torque)
+        convert_data(data_out_real_current, data_out_real_current, data_out_real_Torque, convert_to_torque_nofriction_model, false, false)
+    end
+    if(extend_the_data)
+        extend_data(data_out_Torque, data_out_extended_Torque,Δt,extension_factor,max_lines = max_lines, remove_input_files)
+    end
+    if(permute_columns)
+        column_permutation(data_out_extended_Torque,data_out_permutated_Torque,permutation, remove_input_files)
+        column_permutation(data_out_opt_extended_Torque,data_out_opt_permutated_Torque,permutation, remove_input_files)
+    end
+
+    # Figure plotting
+    if(to_plot)
+        plot_data(data_out_real_current, Folder, "Real Current", interval)
         plot_data(data_out_real_Torque, Folder, "Real Torque", interval)
     end
 end
