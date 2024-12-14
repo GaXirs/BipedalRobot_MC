@@ -2,113 +2,66 @@ using LaTeXStrings
 using CSV
 using DataFrames
 
+#-----------------------------------------------------------------------------------------------------------------
+# PREPROCESSING (1/2)
+# These functions allow to recover the numerical values associated to measurements made on the BipedalRobot
+#  - line format - (d = data, v = value)
+# raw_file.txt   : index d1 d2 d3 D4
+# input_file.txt : time v1 v2 v3 v4
+#-----------------------------------------------------------------------------------------------------------------
+
 function toInt16(numbers::Vector{Int})::Vector{Int16}
-    # We assume numbers are 16-bit unsigned integers (UInt16), reinterpret them to Int16
+    # Numbers are 16-bit unsigned integers (UInt16)
+    # Reinterpret numbers as Int16
     return reinterpret(Int16, UInt16.(numbers))
 end
 
 function transform_position(numbers::Vector{Int16}, frequency::Float64)::Vector{Float64}
-    # The first element of each line is the index of the data (beginning at 0)
-    # Divide this value by the frequency to get time
+    # Convert Index (first number on the a line) into time
     result = [numbers[1] / frequency]  
-    
     # Transform to °
-    # For the speed, the data is in [ticks]
-    # The maximum value is 4095 ticks
-    # Hence, to transform the data to °, just multiply it by (360/4095)
+    # For the position, the data is in [ticks]
+    # The maximum value is 4095 ticks/revolution
     append!(result, numbers[2:end] .*(360 / 4095))
-
     return result
 end
 
 function transform_velocity(numbers::Vector{Int16}, frequency::Float64)::Vector{Float64}
-    # The first element of each line is the index of the data (beginning at 0)
-    # Divide this value by the frequency to get time
+    # Convert Index (first number on the a line) into time
     result = [numbers[1] / frequency]  
-    
     # Transform to rad/s
     # The input data is an adimensionalisation of RPMs by 0.229rmp
     # To transform RMP into RPS (rotation per second), divide it by 60
     # Multiply then by 2π to get the rad/s
-    append!(result, numbers[2:end] .*(0.229*2π / 60)) 
-    
+    append!(result, numbers[2:end] .*(0.229*2π / 60.0)) 
     return result
 end
 
-function transform_PWM(numbers::Vector{Int16}, frequency::Float64)::Vector{Float64}
-    # The first element of each line is the index of the data (beginning at 0)
-    # Divide this value by the frequency to get time
-    result = [numbers[1] / frequency]  
-    
+function transform_voltage(numbers::Vector{Int16}, frequency::Float64)::Vector{Float64}
+    # Convert Index (first number on the a line) into time
+    result = [numbers[1] / frequency]   
     # Transform to PWM [%]
     # A PWM of 100% corresponf to 885 -> we just need to divide what we have by 885
-    append!(result, numbers[2:end] .*(1 / 885))
-
+    # Multiply by the nominal voltage to have the voltage
+    Un = 12.0 # Nominal Voltage
+    append!(result, numbers[2:end] .*((1.0 / 885.0) * Un))
     return result
 end
 
 function transform_current(numbers::Vector{Int16}, frequency::Float64)::Vector{Float64}
-    # The first element of each line is the index of the data (beginning at 0)
-    # Divide this value by the frequency to get time
-    result = [numbers[1] / frequency]  
-    
-    # Transform to PWM [%]
-    # A PWM of 100% corresponf to 885 -> we just need to divide what we have by 885
-    append!(result, numbers[2:end] .*(2.69/1000))
-
+    # Convert Index (first number on the a line) into time
+    result = [numbers[1] / frequency]   
+    # The current is measured by increments of 2.69 mA
+    append!(result, numbers[2:end] .*(2.69/1000.0))
     return result
 end
 
-function convert_to_current_basic_model(PWM::Vector{Float64}, RPS::Vector{Float64}):: Vector{Float64}
-    # Motor Caracteristics: S. Deligne 
-    Un  = 12          # Nominal tension [V]
-    R   = 9.3756      # Armature resistance [Ω]
-    HGR = 353.5       # Hip gear-ratio
-    KGR = 212.6       # Knee gear-ratio
-    kϕ  = 3.6103/HGR  # Back-EMF constant ke' [Nm*s/rad] (linked to joint speed)
-
-    # Simple motor model : U = R*i + kϕ ω -> i = (U - kϕ ω)/R
-    U = PWM[2:end] .* Un
-    ω = RPS[2:end] .* [HGR, KGR, HGR, KGR] # ω = ̇q * GR
-    i = (U .- (ω .* kϕ)) ./ R
-
-    return append!([PWM[1]],i)
-end
-
-function convert_to_torque_basic_model(current::Vector{Float64}, RPS::Vector{Float64}):: Vector{Float64}
-    # Motor Caracteristics: S. Deligne
-    HGR = 353.5         # Hip gear-ratio
-    KGR = 212.6         # Knee gear-ratio
-    Kv  = 0.22/HGR      # Viscous friction constant [Nm*s/rad] (linked to joint speed)
-    τc  = 0.128         # Dry friction torque [Nm]
-    kϕ  = 3.6103/HGR    # Back-EMF constant ke' [Nm*s/rad] (linked to joint speed) 
-
-    # Simple motor model : τ = kϕ*i - τc - Kv q̇
-    ω = RPS[2:end] .* [HGR, KGR, HGR, KGR]
-    τ_0 = current[2:end].* [HGR, KGR, HGR, KGR] .* kϕ .- ω .* Kv
-    τ = ifelse.(τ_0 .> 0, max.(τ_0 .- τc, 0.0), min.(τ_0 .+ τc, 0.0)) # L1, L2, R1, R2
-    return append!([current[1]],τ)
-end
-
-function convert_to_torque_optimised_model(PWM::Vector{Float64}, RPS::Vector{Float64}):: Vector{Float64}
-    Un = 12.0
-    U = PWM[2:end] .* Un
-    # Motor Caracteristics: S. Deligne
-    HGR = 353.5           # Hip gear-ratio
-    KGR = 212.6           # Knee gear-ratio
-    ktp  = 0.395/HGR      # Torque constant with respect to the voltage [Nm/V] 
-    Kvp  = 1.589/HGR      # Viscous friction constant [Nm*s/rad] (linked to motor speed)
-    τc  = 0.065           # Dry friction torque [Nm]
-
-    # Simple motor model : τ = kt'*U - (τc + Kv'q̇) - C(q,q̇)
-    ω = RPS[2:end] .* [HGR, KGR, HGR, KGR]
-    τ_0 = U .* [HGR, KGR, HGR, KGR] .* ktp  .- ω .* Kvp
-    τ = ifelse.(τ_0 .> 0, max.(τ_0 .- τc, 0.0), min.(τ_0 .+ τc, 0.0))
-    
-    return append!([PWM[1]],τ)
-end
-    
-function process_lines(input_file::String, output_file::String, func::Function, frequency::Float64, remove_input_file::Bool)
+function compute_transform(input_file::String, output_file::String, func::Function, frequency::Float64)
+    """
+    Reformats and applies func to the raw datas from the dynamixels
+    func is chosen among:
+    transform_velocity, transform_voltage, transform_current and transform_position
+    """
     open(input_file, "r") do infile
         open(output_file, "w") do outfile
             for line in eachline(infile)
@@ -125,12 +78,127 @@ function process_lines(input_file::String, output_file::String, func::Function, 
             end
         end
     end
-    if(remove_input_file)
-        rm(input_file)
-    end 
 end
 
-function convert_data(input_file_1::String, input_file_2::String, output_file::String, func::Function, remove_input_file_1::Bool, remove_input_file_2::Bool)
+#-----------------------------------------------------------------------------------------------------------------
+# PREPROCESSING (2/2)
+# Theses function ensure coherence between the material robot and the simulation
+# [t,HL,KL,HR,KR] (Robot measurements) -> [t,HL,HR,FL,FR] (Simulator)
+# H = Hip, K = Knee, R = Right, L = Left, t = Time
+# permutation = [(1,1,1.0),(2,2,1.0), (3,4,1.0),(4,3,-1.0),(5,5,-1.0)]
+#-----------------------------------------------------------------------------------------------------------------
+
+function apply_permutation(input_file::String, output_file::String, permutation::Vector{Tuple{Int, Int,Float64}}, remove_input_file::Bool)
+    """
+    Applies permutation to the input and writes it in the output
+    permutation = [(a,b,c), ...] -> column a from input takes place b in output and is multiplied by c
+    """
+    # Open the input and output files
+    open(input_file, "r") do infile
+        open(output_file, "w") do outfile
+            for line in eachline(infile)
+                # Parse the input line into columns (assume space-separated values)
+                columns = parse.(Float64, split(line, " "))
+                # Create a new row with permuted columns
+                permuted_row = zeros(Float64, length(columns))
+                for (source_col, target_col,sign) in permutation
+                    permuted_row[target_col] = columns[source_col]*sign
+                end
+                # Write the permuted row to the output file
+                write(outfile, join(permuted_row, " ") * "\n")
+            end
+        end
+    end
+    if(remove_input_file)
+        rm(input_file)
+    end
+end
+
+#-----------------------------------------------------------------------------------------------------------------
+# PROCESSING
+# These functions implement motor models developped by S. DELIGNE to compute torques
+# Models: friction less, basic model and optimised model
+#-----------------------------------------------------------------------------------------------------------------
+
+function to_current_basic_model(U::Vector{Float64}, q̇ ::Vector{Float64}):: Vector{Float64}
+    """
+    Takes voltage and velocity as inputs and returns the current
+    Uses the model i = (U - ω kϕ)/R , ω = q̇ GR  
+    """
+    # Motor Caracteristics: S. Deligne 
+    R   = 9.3756      # Armature resistance [Ω]
+    HGR = 353.5       # Hip gear-ratio
+    KGR = 212.6       # Knee gear-ratio
+    kϕ  = 3.6103/HGR  # Back-EMF constant ke' [Nm*s/rad] (linked to joint speed)
+    # Simple motor model : U = R*i + kϕ ω -> i = (U - kϕ ω)/R
+    ω = q̇[2:end] .* [HGR, HGR, KGR, KGR] # ω = ̇q * GR
+    i = (U[2:end] .- (ω .* kϕ)) ./ R
+
+    return append!([U[1]],i)
+end
+
+function to_torque_frictionless_model(current::Vector{Float64}, q̇::Vector{Float64}):: Vector{Float64}
+    """
+    Takes current and velocity (does not serves but is recquired to fit the format)
+    as inputs and returns the torque.
+    Uses the model τ = kϕ i
+    """
+    # Motor Caracteristics: S. Deligne
+    HGR = 353.5         # Hip gear-ratio
+    KGR = 212.6         # Knee gear-ratio
+    kϕ  = 3.6103/HGR    # Back-EMF constant ke' [Nm*s/rad] (linked to joint speed) 
+
+    # Frictionless motor model : τ = kϕ*i
+    τ = current[2:end].* [HGR, HGR, KGR, KGR] .* kϕ
+    
+    return append!([current[1]],τ)
+end
+
+function to_torque_basic_model(current::Vector{Float64}, q̇::Vector{Float64}):: Vector{Float64}
+    """
+    Takes current and velocity as inputs and returns the torque
+    Uses the model τ = kϕ i - τc - Kv ω
+    """
+    # Motor Caracteristics: S. Deligne
+    HGR = 353.5         # Hip gear-ratio
+    KGR = 212.6         # Knee gear-ratio
+    Kv  = 0.22/HGR      # Viscous friction constant [Nm*s/rad] (linked to joint speed)
+    τc  = 0.128         # Dry friction torque [Nm]
+    kϕ  = 3.6103/HGR    # Back-EMF constant ke' [Nm*s/rad] (linked to joint speed) 
+
+    # Simple motor model : τ = kϕ*i - τc - Kv ω
+    ω = q̇[2:end] .* [HGR, HGR, KGR, KGR]
+    τ_0 = current[2:end].* [HGR, HGR, KGR, KGR] .* kϕ .- ω .* Kv # τ = kϕ i - kv ω
+    τ = ifelse.(τ_0 .> 0, max.(τ_0 .- τc, 0.0), min.(τ_0 .+ τc, 0.0)) # # τ = kϕ i - kv ω - τc
+
+    return append!([current[1]],τ)
+end
+
+function to_torque_optimised_model(U::Vector{Float64}, q̇::Vector{Float64}):: Vector{Float64}
+    """
+    Takes voltage and velocity as inputs and returns the torque
+    Uses the model τ = kt' U - (τc + Kv'q̇)
+    """
+    # Motor Caracteristics: S. Deligne
+    HGR = 353.5           # Hip gear-ratio
+    KGR = 212.6           # Knee gear-ratio
+    ktp  = 0.395/HGR      # Torque constant with respect to the voltage [Nm/V] 
+    Kvp  = 1.589/HGR      # Viscous friction constant [Nm*s/rad] (linked to motor speed)
+    τc  = 0.065           # Dry friction torque [Nm]
+
+    # Optimised motor model : τ = kt'*U - (τc + Kv'q̇) - C(q,q̇)
+    ω = q̇[2:end] .* [HGR, HGR, KGR, KGR]
+    τ_0 = U[2:end] .* [HGR, HGR, KGR, KGR] .* ktp  .- ω .* Kvp
+    τ = ifelse.(τ_0 .> 0, max.(τ_0 .- τc, 0.0), min.(τ_0 .+ τc, 0.0))
+    
+    return append!([U[1]],τ)
+end
+
+function compute_model(input_file_1::String, input_file_2::String, output_file::String, func::Function)
+    """
+    Takes two input files and writes the result of func in the output
+    func: to_current_basic_model, to_torque_basic_model and to_torque_optimised_model
+    """
     # Open all files
     open(input_file_1, "r") do f1
         open(input_file_2, "r") do f2
@@ -150,15 +218,14 @@ function convert_data(input_file_1::String, input_file_2::String, output_file::S
             end
         end
     end
-    if(remove_input_file_1)
-        rm(input_file_1)
-    end
-    if(remove_input_file_2)
-        rm(input_file_2)
-    end 
 end
 
-function extend_data(input_file::String, output_file::String, δt::Float64, ext_fact::Int, remove_file::Bool; max_lines::Union{Nothing, Int} = nothing)
+#-----------------------------------------------------------------------------------------------------------------
+# POST-PROCESSING
+# These functions allow to extend the files (add padding for simulation) and to plot them
+#-----------------------------------------------------------------------------------------------------------------
+
+function extend_data(input_file::String, output_file::String, δt::Float64, ext_fact::Int; max_lines::Union{Nothing, Int} = nothing)
     open(input_file, "r") do infile
         open(output_file, "w") do outfile
             total_lines_written = 0  # Counter for lines written to the output file
@@ -187,31 +254,6 @@ function extend_data(input_file::String, output_file::String, δt::Float64, ext_
                 end
             end
         end
-    end
-    if(remove_file)
-        rm(input_file)
-    end
-end
-
-function column_permutation(input_file::String, output_file::String, permutation::Vector{Tuple{Int, Int,Float64}}, remove_input_files::Bool)
-    # Open the input and output files
-    open(input_file, "r") do infile
-        open(output_file, "w") do outfile
-            for line in eachline(infile)
-                # Parse the input line into columns (assume space-separated values)
-                columns = parse.(Float64, split(line, " "))
-                # Create a new row with permuted columns
-                permuted_row = zeros(Float64, length(columns))
-                for (source_col, target_col,sign) in permutation
-                    permuted_row[target_col] = columns[source_col]*sign
-                end
-                # Write the permuted row to the output file
-                write(outfile, join(permuted_row, " ") * "\n")
-            end
-        end
-    end
-    if(remove_input_files)
-        rm(input_file)
     end
 end
 
@@ -254,6 +296,10 @@ function plot_data(file_path::String, Folder::String, title::String, time_range:
 
     savefig(joinpath(Folder, title * ".png"))  # Save as PNG
 end
+
+#-----------------------------------------------------------------------------------------------------------------
+# OTHER: FOLDER SPECIFIC FUNCTIONS
+#-----------------------------------------------------------------------------------------------------------------
 
 function subsample_csv(input_file::String, subsampling_factor::Int, output_file::String)
     if subsampling_factor < 1
