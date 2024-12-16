@@ -22,7 +22,7 @@ function transform_position(numbers::Vector{Int16}, frequency::Float64)::Vector{
     # Transform to °
     # For the position, the data is in [ticks]
     # The maximum value is 4095 ticks/revolution
-    append!(result, numbers[2:end] .*(360 / 4095))
+    append!(result, numbers[2:end] .*(360 / 4095) .- 90)
     return result
 end
 

@@ -1,8 +1,24 @@
 using Plots
 using LaTeXStrings
 include("utils.jl")
-F1 = true
+
+#----------------------------------------------------------------------------
+#                       Folder DETAILS
+#----------------------------------------------------------------------------
+
+F1 = false
 f1 = "data_conv_test"
+
+F2 = true
+f2 = "WP_straightline"
+
+F3 = false
+f3 = "WP_straightline_legswitched"
+
+FWP = false
+fWP = "WalkingPattern"
+
+
 #----------------------------------------------------------------------------
 #                       FILE DETAILS
 #----------------------------------------------------------------------------
@@ -103,5 +119,15 @@ end
 #----------------------------------------------------------------------------
 if(F1)
     folder_full_process(f1)
+end
+if(F2)
+   folder_full_process(f2)
+end
+if(F3)
+   folder_full_process(f3)
+end
+if(FWP)
+   path = joinpath(@__DIR__, "..", "data", fWP)
+   plot_data(joinpath(path, "Outputs", "Torque.txt"), joinpath(path, "Images"), "Torques_Xing", interval)
 end
 #----------------------------------------------------------------------------
