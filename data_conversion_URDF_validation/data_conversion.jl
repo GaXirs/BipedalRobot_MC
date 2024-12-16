@@ -12,10 +12,10 @@ f1 = "data_conv_test"
 F2 = true
 f2 = "WP_straightline"
 
-F3 = false
+F3 = true
 f3 = "WP_straightline_legswitched"
 
-FWP = false
+FWP = true
 fWP = "WalkingPattern"
 
 

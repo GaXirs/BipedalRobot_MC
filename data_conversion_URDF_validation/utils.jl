@@ -286,15 +286,18 @@ function plot_data(file_path::String, Folder::String, title::String, time_range:
     end
 
     # Create the plot
-    p = plot(time, data1, label="Data 1", xlabel="Time", ylabel="Values", lw=2)
-    plot!(p, time, data2, label="Data 2", lw=2)
-    plot!(p, time, data3, label="Data 3", lw=2)
-    plot!(p, time, data4, label="Data 4", lw=2)
-
+    p1 = plot(time, data1, label="Data 1", xlabel="Time", ylabel="Values", lw=2, color="#1f77b4")
+    plot!(p1, time, data2, label="Data 2", lw=2, color="#ff7f0e")
     # Add title
-    title!(p, title)
+    title!(p1, title*" Hip")
+    savefig(joinpath(Folder, title * "_Hip" * ".png"))  # Save as PNG
+    # Create the plot
+    p2 = plot(time, data3, label="Data 3", xlabel="Time", ylabel="Values", lw=2, color="#2ca02c")
+    plot!(p2, time, data4, label="Data 4", lw=2,color="#d62728")
+    # Add title
+    title!(p2, title*" Knee")
+    savefig(joinpath(Folder, title * "_Knee" * ".png"))  # Save as PNG
 
-    savefig(joinpath(Folder, title * ".png"))  # Save as PNG
 end
 
 #-----------------------------------------------------------------------------------------------------------------
