@@ -32,11 +32,11 @@ write_torques = false;
 
 ctrl = false;
 
-data_from_CSV = true;
+data_from_CSV = false;
 
 torque_model = 2 # 0 for simples, 1 for basic and 2 for optimal
 
-filename_read = joinpath(@__DIR__, "..", "data", "WP_straightline", "Simulations", "Torque_c_bm.txt");
+filename_read = joinpath(@__DIR__, "..", "data", "WP_straightline_intheair", "Simulations", "Torque_v_om.txt");
 filename_save = joinpath(@__DIR__, "..", "data", "WalkingPattern", "Outputs", "Torque.txt");
 CSV_file = joinpath(@__DIR__, "..", "data", "WalkingPattern", "Raw", "walkingPattern_ref.csv");
 
@@ -61,7 +61,7 @@ else
 end
 
 # Simulation parameters
-Δt = 1e-4       # Simulation step 
+Δt = 1e-3       # Simulation step 
 
 # Construct the robot in the simulation engine 
 rs = ZMProbot.RobotSimulator(;

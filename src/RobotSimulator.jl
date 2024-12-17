@@ -291,7 +291,6 @@ function controller_torque_input_file(
 
     function controller!(τ, t, state)
         ddl = 2 # Non-actuated joints at each side of the actuated joints 
-
         # The values are only changed at the simulation frequency
         # This is needed since the function simulate of RigidBody dynamic will iterate twice faster as it uses pre-calculation
         if (t >= sim_index * Δt && t < time)

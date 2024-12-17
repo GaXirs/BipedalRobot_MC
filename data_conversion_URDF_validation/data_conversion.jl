@@ -7,19 +7,13 @@ include("utils_conversion.jl")
 #----------------------------------------------------------------------------
 
 F1 = false
-f1 = "data_conv_test"
+f1 = "WP_straightline_intheair"
 
-F2 = false
-f2 = "WP_straightline"
+F2 = true
+f2 = "WP_validation"
 
-F3 = false
-f3 = "WP_straightline_legswitched"
-
-F4 = false
-f4 = "Super_slow"
-
-FSimu = true
-torque_model = 0
+FSimu = false
+torque_model = 2
 fS_1 = "Easiest_model"
 fS_2 = "Basic_model"
 fS_3 = "Opt_model"
@@ -30,7 +24,7 @@ fWP = "WalkingPattern"
 #----------------------------------------------------------------------------
 #                       FILE DETAILS
 #----------------------------------------------------------------------------
-freq = 10000.0            # Frequency of measurements
+freq = 50.0            # Frequency of measurements
 interval = (0.0,5.0)      # Plot interval
 # [t,HL,KL,HR,KR] (LabView) -> [t,HL,HR,FL,FR] (Code)
 # H = Hip, K = Knee, R = Right, L = Left, t = Time
@@ -126,17 +120,12 @@ end
 # FLODER PROCESSING
 #----------------------------------------------------------------------------
 if(F1)
-    folder_full_process(f1)
+   folder_full_process(f1)
 end
 if(F2)
    folder_full_process(f2)
 end
-if(F3)
-   folder_full_process(f3)
-end
-if(F4)
-   folder_full_process(f4)
-end
+
 if(FSimu)
    if(torque_model == 0)
       path = joinpath(@__DIR__, "..", "data", "simulation", fS_1)
