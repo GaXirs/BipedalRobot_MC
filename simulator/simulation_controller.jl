@@ -24,7 +24,7 @@ ZMProbot = ZMPBipedRobot
 #                      Code parameters                    #
 ###########################################################
 
-ANIMATE_RESULT = false;
+ANIMATE_RESULT = true;
 
 MODEL_2D = true;
 
@@ -33,6 +33,8 @@ write_torques = false;
 ctrl = false;
 
 data_from_CSV = true;
+
+torque_model = 2 # 0 for simples, 1 for basic and 2 for optimal
 
 filename_read = joinpath(@__DIR__, "..", "data", "WP_straightline", "Simulations", "Torque_c_bm.txt");
 filename_save = joinpath(@__DIR__, "..", "data", "WalkingPattern", "Outputs", "Torque.txt");
@@ -59,7 +61,7 @@ else
 end
 
 # Simulation parameters
-Δt = 1e-3       # Simulation step 
+Δt = 1e-4       # Simulation step 
 
 # Construct the robot in the simulation engine 
 rs = ZMProbot.RobotSimulator(;
@@ -71,9 +73,8 @@ rs = ZMProbot.RobotSimulator(;
 );
 
 # Generate the visualiser
-if(ANIMATE_RESULT) 
-    vis = ZMProbot.set_visulalizer(; mechanism = rs.mechanism)
-end
+vis = ZMProbot.set_visulalizer(; mechanism = rs.mechanism)
+
 
 # Intiial configuration 
 boom = [0, 0]
@@ -152,21 +153,20 @@ if(ctrl)
     tend = tplot[end]       # Simulation time 
 
     # Simulate the robot
-    if(write_torques)
-        open(filename_save, "w") do file
-            # The file is now open in write mode, and all its contents are deleted.
-        end
-    end
     controller! = ZMProbot.trajectory_controller!(rs, tplot, qref, Δt, Kp, Ki, Kd, filename_save, write_torques)
     ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);
 else
     if(data_from_CSV)
-        open(joinpath(@__DIR__, "verification.txt"), "w") do file
-            # The file is now open in write mode, and all its contents are deleted.
-        end
         tend = 20.0
+        if(torque_model == 0)
+            folder = joinpath(@__DIR__, "..", "data", "simulation", "Easiest_model", "Outputs")
+        elseif(torque_model == 1)
+            folder = joinpath(@__DIR__, "..", "data", "simulation", "Basic_model", "Outputs")
+        else
+            folder = joinpath(@__DIR__, "..", "data", "simulation", "Opt_model", "Outputs")
+        end
         # Simulate the robot
-        controller! = ZMProbot.dynamixel_controller(rs, tend, Δt, CSV_file, 50.0)
+        controller! = ZMProbot.dynamixel_controller(rs, tend, Δt, CSV_file, folder; freq=50.0, torque_model=torque_model, write_in_folder=true)
         ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);
     else
         tend = 20.0

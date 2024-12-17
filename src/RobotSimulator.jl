@@ -212,6 +212,11 @@ function trajectory_controller!(
     filename::String,
     write_torques::Bool = false,
 )
+    if(write_torques)
+        open(filename_save, "w") do file
+            # The file is now open in write mode, and all its contents are deleted.
+        end
+    end
     mechanism = rs.mechanism
     state = rs.state
 
@@ -258,7 +263,7 @@ function trajectory_controller!(
             temp .= newτ[(end - 3 - ddl):(end - ddl)]
             sim_index = sim_index + 1
         end
-        τ[(end - 3 - ddl):(end - ddl)] .= temp
+        τ[(end - 3 - ddl):(end - ddl)] .= [0.0,0.0,0.0,0.0]
         if (t >= time[index] && stop == false)
             index = index + 1
         end
@@ -313,21 +318,27 @@ function dynamixel_controller(
     time::Float64,
     Δt::Float64,
     filename::String,
+    folder_save::String;
     freq::Float64 = 50.0,
+    torque_model::Int64 = 3,
+    write_in_folder::Bool = false,
 )
-    #----------------------------------------------------------------------------
-    #   Read the torques from filename and applies it to the URDF Robot joints
-    #----------------------------------------------------------------------------
+    if(write_in_folder)
+        open(joinpath(folder_save, "Current.txt"), "w") do file end
+        open(joinpath(folder_save, "Voltage.txt"), "w") do file end
+        open(joinpath(folder_save, "Velocity.txt"), "w") do file end
+        open(joinpath(folder_save, "Torque.txt"), "w") do file end
+        open(joinpath(folder_save, "Position.txt"), "w") do file end
+    end
+
     state = rs.state
     sim_index = 0
     file_index = 0
-    δt_file = 1/freq    
+    δt_file = 1/freq   
 
-    # Two two first torques are related to the boom and should always be controller to zero
-    # The two last torques are related to the feet and should also be controlled to zero
-    # The only torques changed by the controller are the four in the middle (Left hip, right hip, left knee, right knee)
-    temp_τ = [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
-
+    #----------------------------------------------------------------------------
+    #   Read the torques from filename and applies it to the URDF Robot joints
+    #----------------------------------------------------------------------------
     data = CSV.read(filename, DataFrame)
     t_file = data.time  # Extract the time column
     q1_l = data.q1_l   # Extract q_LH
@@ -342,11 +353,35 @@ function dynamixel_controller(
     #----------------------------------------------------------------------------
     #                          DXL Controller values
     #----------------------------------------------------------------------------
-    Kp = 900
+    Kp = 900.0 / 128.0 # cfr difference between KpP and KpP(TBL) in the motor information document
     # Ki = Kd = 0
     # KFF1 = KFF2 = 0
     PWM_goal = 885.0
+
+    #----------------------------------------------------------------------------
+    #                          Motor characteristics
+    #----------------------------------------------------------------------------
     Nominal_voltage = 12.0
+    R   = 9.3756          # Armature resistance [Ω]
+    HGR = 353.5           # Hip gear-ratio
+    KGR = 212.6           # Knee gear-ratio
+    kϕ  = 3.6103/HGR      # Back-EMF constant ke' [Nm*s/rad] (linked to joint speed)
+    Kv  = 0.22/HGR        # Viscous friction constant [Nm*s/rad] (linked to joint speed)
+    ktp  = 0.395/HGR      # Torque constant with respect to the voltage [Nm/V] 
+    Kvp  = 1.589/HGR      # Viscous friction constant [Nm*s/rad] (linked to motor speed)
+    τc_i  = 0.128         # Dry friction torque [Nm]
+    τc_u  = 0.065           # Dry friction torque [Nm]
+
+    # Two two first torques are related to the boom and should always be controller to zero
+    # The two last torques are related to the feet and should also be controlled to zero
+    # The only torques changed by the controller are the four in the middle (Left hip, right hip, left knee, right knee)
+    temp_τ = [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+    current_q = [0.0,0.0,0.0,0.0]
+    u = [0.0,0.0,0.0,0.0]
+    ω = [0.0,0.0,0.0,0.0]
+    i = [0.0,0.0,0.0,0.0]
+    τ_m = [0.0,0.0,0.0,0.0]
+    prev_file_index = 0
 
     function controller!(τ, t, state)
         ddl = 2 # Non-actuated joints at each side of the actuated joints
@@ -359,20 +394,60 @@ function dynamixel_controller(
         # The values are only changed at the simulation frequency
         # This is needed since the function simulate of RigidBody dynamic will iterate twice faster as it uses pre-calculation
         if (t >= sim_index * Δt && t < time+Δt) # time+Δt is used due to the rounding errors on t
+
+            sim_index += 1
+            current_q .= configuration(state)[(end - 3 - ddl):(end - ddl)]
+            current_̇q = velocity(state)[(end - 3 - ddl):(end - ddl)]
+
             #----------------------------------------------------------------------------
             #DXL controller - Only Proportionnal (as observed at this time on the Wizard)
             #----------------------------------------------------------------------------
-            actual_q = configuration(state)[(end - 3 - ddl):(end - ddl)]
-            PWM = Kp * (q - actual_q) # Only true because profile acceleration and profile velocity are null
-            PWM_sat = ifelse.(abs.(PWM) .> PWM_goal, PWM_goal*sign.(PWM), PWM) # Apply_saturation
+            # Note : Kp is a gain in [PWM/ticks] -> we need to convert Kp in a gain in [PWM/rad]
+            PWM = (q .- current_q) .* (4095.0/(2π)* Kp) # Only true because profile acceleration and profile velocity are null
+            PWM_sat = clamp.(PWM, -PWM_goal, PWM_goal)# Apply_saturation
 
-            # Motor = Low-pass filter -> the motor sees only a DC input voltage
+            # Motor = Low-pass filter -> the DC motor sees only a DC input voltage
             # We can hence approximate the inverter output as u = PWM*U_n
-            u = PWM_sat*Nominal_voltage 
+            u .= PWM_sat .* (Nominal_voltage / 885.0)
 
-            sim_index += 1
+            #----------------------------------------------------------------------------
+            #                           DC motor equations
+            #----------------------------------------------------------------------------
+            ω .= current_̇q .* [HGR, HGR, KGR, KGR]
+            i .= (u .- (ω .* kϕ)) ./ R
+
+            # Simple torque model : τ = kϕ * i
+            if(torque_model == 0)
+                τ_m .= i.* [HGR, HGR, KGR, KGR] .* kϕ
+            elseif(torque_model == 1)
+                τ_0 = i.* [HGR, HGR, KGR, KGR] .* kϕ .- ω .* Kv
+                τ_m .= ifelse.(τ_0 .> 0, max.(τ_0 .- τc_i, 0.0), min.(τ_0 .+ τc_i, 0.0))
+            else
+                τ_0 = u .* [HGR, HGR, KGR, KGR] .* ktp  .- ω .* Kvp
+                τ_m .= ifelse.(τ_0 .> 0, max.(τ_0 .- τc_u, 0.0), min.(τ_0 .+ τc_u, 0.0))
+            end
+            temp_τ[(end - 3 - ddl):(end - ddl)] .= τ_m
+
+            if(write_in_folder)
+                open(joinpath(folder_save, "Current.txt"), "a") do file 
+                    write(file, join([t,i...], " ") * "\n") 
+                end
+                open(joinpath(folder_save, "Voltage.txt"), "a") do file 
+                    write(file, join([t,u...], " ") * "\n") 
+                end
+                open(joinpath(folder_save, "Velocity.txt"), "a") do file 
+                    write(file, join([t,current_̇q...], " ") * "\n") 
+                end
+                open(joinpath(folder_save, "Torque.txt"), "a") do file 
+                    write(file, join([t,τ_m...], " ") * "\n") 
+                end
+                open(joinpath(folder_save, "Position.txt"), "a") do file 
+                    write(file, join([t,current_q...], " ") * "\n") 
+                end
+                prev_file_index += 1
+            end
         end
-        # τ needs to be [0 0 τ_LH τ_RH τ_LK τ_RK 0 0]
+
         τ .= temp_τ
 
         return nothing

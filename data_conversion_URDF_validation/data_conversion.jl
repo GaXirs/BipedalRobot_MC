@@ -15,8 +15,14 @@ f2 = "WP_straightline"
 F3 = false
 f3 = "WP_straightline_legswitched"
 
-F4 = true
+F4 = false
 f4 = "Super_slow"
+
+FSimu = true
+torque_model = 0
+fS_1 = "Easiest_model"
+fS_2 = "Basic_model"
+fS_3 = "Opt_model"
 
 FWP = false
 fWP = "WalkingPattern"
@@ -24,8 +30,8 @@ fWP = "WalkingPattern"
 #----------------------------------------------------------------------------
 #                       FILE DETAILS
 #----------------------------------------------------------------------------
-freq = 50.0            # Frequency of measurements
-interval = (0.0,50.0)  # Plot interval
+freq = 10000.0            # Frequency of measurements
+interval = (0.0,5.0)      # Plot interval
 # [t,HL,KL,HR,KR] (LabView) -> [t,HL,HR,FL,FR] (Code)
 # H = Hip, K = Knee, R = Right, L = Left, t = Time
 permutation = [(1,1,1.0),(2,2,1.0), (3,4,1.0),(4,3,-1.0),(5,5,-1.0)]                                                                   
@@ -130,6 +136,20 @@ if(F3)
 end
 if(F4)
    folder_full_process(f4)
+end
+if(FSimu)
+   if(torque_model == 0)
+      path = joinpath(@__DIR__, "..", "data", "simulation", fS_1)
+   elseif(torque_model == 1)
+      path = joinpath(@__DIR__, "..", "data", "simulation", fS_2)
+   else
+      path = joinpath(@__DIR__, "..", "data", "simulation", fS_3)
+   end
+   plot_data(joinpath(path, "Outputs", "Torque.txt"), joinpath(path, "Images"), "Torque", interval)
+   plot_data(joinpath(path, "Outputs", "Current.txt"), joinpath(path, "Images"), "Current", interval)
+   plot_data(joinpath(path, "Outputs", "Velocity.txt"), joinpath(path, "Images"), "Velocity", interval)
+   plot_data(joinpath(path, "Outputs", "Voltage.txt"), joinpath(path, "Images"), "Voltage", interval)
+   plot_data(joinpath(path, "Outputs", "Position.txt"), joinpath(path, "Images"), "Position", interval)
 end
 if(FWP)
    path = joinpath(@__DIR__, "..", "data", fWP)
