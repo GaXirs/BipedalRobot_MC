@@ -24,17 +24,19 @@ ZMProbot = ZMPBipedRobot
 #                      Code parameters                    #
 ###########################################################
 
-ANIMATE_RESULT = true;
+ANIMATE_RESULT = false;
 
 MODEL_2D = true;
 
-write_torques = true;
+write_torques = false;
 
-ctrl = true;
+ctrl = false;
 
 data_from_CSV = true;
 
-filename = joinpath(@__DIR__, "..", "data", "WP_straightline", "Simulations", "Torque_v_om.txt");
+filename_read = joinpath(@__DIR__, "..", "data", "WP_straightline", "Simulations", "Torque_c_bm.txt");
+filename_save = joinpath(@__DIR__, "..", "data", "WalkingPattern", "Outputs", "Torque.txt");
+CSV_file = joinpath(@__DIR__, "..", "data", "WalkingPattern", "Raw", "walkingPattern_ref.csv");
 
 ###########################################################
 #                    Simulation parameters                #
@@ -46,7 +48,7 @@ if MODEL_2D
     yPath = 1.18 .+ 0.0 .* t
     xPath = 0.01 * t
     θ_0 = 0
-    robot_model = "ZMP_2DBipedRobot.urdf"
+    robot_model = "ZMP_2DBipedRobot_nodamping.urdf"
 else
     ## Circle path for 3D Robot Model 
     t = vec(100:-1:75)
@@ -68,8 +70,10 @@ rs = ZMProbot.RobotSimulator(;
     add_flat_ground = true,
 );
 
-# Generate the visualiser 
-vis = ZMProbot.set_visulalizer(; mechanism = rs.mechanism)
+# Generate the visualiser
+if(ANIMATE_RESULT) 
+    vis = ZMProbot.set_visulalizer(; mechanism = rs.mechanism)
+end
 
 # Intiial configuration 
 boom = [0, 0]
@@ -79,11 +83,11 @@ ZMProbot.set_nominal!(rs, vis, boom, actuators, foot)
 
 if(ctrl)
     # Position control parameters
-    Kp = 10000.0
+    Kp = 2000.0
     Ki = 100.0
     Kd = 100.0
     if(data_from_CSV)
-        data = CSV.read(joinpath(@__DIR__, "..", "data", "WalkingPattern", "Raw", "walkingPattern_ref.csv"), DataFrame)
+        data = CSV.read(CSV_file, DataFrame)
         # Extract data from the DataFrame
         tplot = data.time  # Extract the time column
         q1_l = data.q1_l   # Extract q1_l
@@ -149,17 +153,27 @@ if(ctrl)
 
     # Simulate the robot
     if(write_torques)
-        open(filename, "w") do file
+        open(filename_save, "w") do file
             # The file is now open in write mode, and all its contents are deleted.
         end
     end
-    controller! = ZMProbot.trajectory_controller!(rs, tplot, qref, Δt, Kp, Ki, Kd, filename, write_torques)
+    controller! = ZMProbot.trajectory_controller!(rs, tplot, qref, Δt, Kp, Ki, Kd, filename_save, write_torques)
     ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);
 else
-    tend = 20.0
-    # Simulate the robot
-    controller! = ZMProbot.controller_torque_input_file(rs, tend, Δt, filename)
-    ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);
+    if(data_from_CSV)
+        open(joinpath(@__DIR__, "verification.txt"), "w") do file
+            # The file is now open in write mode, and all its contents are deleted.
+        end
+        tend = 20.0
+        # Simulate the robot
+        controller! = ZMProbot.dynamixel_controller(rs, tend, Δt, CSV_file, 50.0)
+        ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);
+    else
+        tend = 20.0
+        # Simulate the robot
+        controller! = ZMProbot.controller_torque_input_file(rs, tend, Δt, filename_read)
+        ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);
+    end
 end
 # Open the visulaiser and run the animation 
 if ANIMATE_RESULT

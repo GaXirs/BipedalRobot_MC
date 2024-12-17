@@ -1,6 +1,6 @@
 using Plots
 using LaTeXStrings
-include("utils.jl")
+include("utils_conversion.jl")
 
 #----------------------------------------------------------------------------
 #                       Folder DETAILS
@@ -9,21 +9,23 @@ include("utils.jl")
 F1 = false
 f1 = "data_conv_test"
 
-F2 = true
+F2 = false
 f2 = "WP_straightline"
 
-F3 = true
+F3 = false
 f3 = "WP_straightline_legswitched"
 
-FWP = true
-fWP = "WalkingPattern"
+F4 = true
+f4 = "Super_slow"
 
+FWP = false
+fWP = "WalkingPattern"
 
 #----------------------------------------------------------------------------
 #                       FILE DETAILS
 #----------------------------------------------------------------------------
 freq = 50.0            # Frequency of measurements
-interval = (0.0,20.0)  # Plot interval
+interval = (0.0,50.0)  # Plot interval
 # [t,HL,KL,HR,KR] (LabView) -> [t,HL,HR,FL,FR] (Code)
 # H = Hip, K = Knee, R = Right, L = Left, t = Time
 permutation = [(1,1,1.0),(2,2,1.0), (3,4,1.0),(4,3,-1.0),(5,5,-1.0)]                                                                   
@@ -125,6 +127,9 @@ if(F2)
 end
 if(F3)
    folder_full_process(f3)
+end
+if(F4)
+   folder_full_process(f4)
 end
 if(FWP)
    path = joinpath(@__DIR__, "..", "data", fWP)

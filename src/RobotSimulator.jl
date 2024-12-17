@@ -199,7 +199,6 @@ function show_frame!(rs::RobotSimulator, vis::MechanismVisualizer)
 end
 
 """
-
 Define the controller which will be used in the RigidBodyDynamics.simulate function 
 """
 function trajectory_controller!(
@@ -267,33 +266,113 @@ function trajectory_controller!(
     end
 end
 
-"""
-
-Define the controller which will be used in the RigidBodyDynamics.simulate function 
-"""
 function controller_torque_input_file(
     rs::RobotSimulator,
     time::Float64,
     Δt::Float64,
     filename::String,
 )
+    #----------------------------------------------------------------------------
+    #   Read the torques from filename and applies it to the URDF Robot joints
+    #----------------------------------------------------------------------------
     state = rs.state
     sim_index = 0
 
+    # Two two first torques are related to the boom and should always be controller to zero
+    # The two last torques are related to the feet and should also be controlled to zero
+    # The only torques changed by the controller are the four in the middle (Left hip, right hip, left knee, right knee)
     temp_τ = [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
-    function controller!(τ, t, state)
-        ddl = 2 # For 2 non-actuated foot 
 
+
+    function controller!(τ, t, state)
+        ddl = 2 # Non-actuated joints at each side of the actuated joints 
+
+        # The values are only changed at the simulation frequency
+        # This is needed since the function simulate of RigidBody dynamic will iterate twice faster as it uses pre-calculation
         if (t >= sim_index * Δt && t < time)
             open(filename, "r") do file
                 lines = readlines(file)                          
                 if (sim_index < length(lines))                      
-                    line = split(lines[sim_index+1] , " ")                                 
+                    line = split(lines[sim_index+1] , " ")
+                    # Line = time τ_LH τ_RH τ_LK τ_RK
+                    # We only change the torques of the hips and the knees                                 
                     temp_τ[(end - 3 - ddl):(end - ddl)] .= parse.(Float64, line[2:end])                                         
                 end
             end
             sim_index += 1
         end
+        # τ needs to be [0 0 τ_LH τ_RH τ_LK τ_RK 0 0]
+        τ .= temp_τ
+
+        return nothing
+    end
+end
+
+function dynamixel_controller(
+    rs::RobotSimulator,
+    time::Float64,
+    Δt::Float64,
+    filename::String,
+    freq::Float64 = 50.0,
+)
+    #----------------------------------------------------------------------------
+    #   Read the torques from filename and applies it to the URDF Robot joints
+    #----------------------------------------------------------------------------
+    state = rs.state
+    sim_index = 0
+    file_index = 0
+    δt_file = 1/freq    
+
+    # Two two first torques are related to the boom and should always be controller to zero
+    # The two last torques are related to the feet and should also be controlled to zero
+    # The only torques changed by the controller are the four in the middle (Left hip, right hip, left knee, right knee)
+    temp_τ = [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+
+    data = CSV.read(filename, DataFrame)
+    t_file = data.time  # Extract the time column
+    q1_l = data.q1_l   # Extract q_LH
+    q1_r = data.q1_r   # Extract q_RH
+    q2_l = data.q2_l   # Extract q_LK
+    q2_r = data.q2_r   # Extract q_RK
+
+    # Reconstruct qref, ZMP, and CoM
+    qref = hcat(q1_l, q1_r, q2_l, q2_r)  # Reconstruct qref
+    q = [0.0,0.0,0.0,0.0]
+
+    #----------------------------------------------------------------------------
+    #                          DXL Controller values
+    #----------------------------------------------------------------------------
+    Kp = 900
+    # Ki = Kd = 0
+    # KFF1 = KFF2 = 0
+    PWM_goal = 885.0
+    Nominal_voltage = 12.0
+
+    function controller!(τ, t, state)
+        ddl = 2 # Non-actuated joints at each side of the actuated joints
+        
+        if(t >= δt_file*file_index && t < t_file[end]+δt_file) # t_file[end]+δt is used due to the rounding errors on t
+            q .= qref[file_index+1,:]
+            file_index += 1 
+        end
+
+        # The values are only changed at the simulation frequency
+        # This is needed since the function simulate of RigidBody dynamic will iterate twice faster as it uses pre-calculation
+        if (t >= sim_index * Δt && t < time+Δt) # time+Δt is used due to the rounding errors on t
+            #----------------------------------------------------------------------------
+            #DXL controller - Only Proportionnal (as observed at this time on the Wizard)
+            #----------------------------------------------------------------------------
+            actual_q = configuration(state)[(end - 3 - ddl):(end - ddl)]
+            PWM = Kp * (q - actual_q) # Only true because profile acceleration and profile velocity are null
+            PWM_sat = ifelse.(abs.(PWM) .> PWM_goal, PWM_goal*sign.(PWM), PWM) # Apply_saturation
+
+            # Motor = Low-pass filter -> the motor sees only a DC input voltage
+            # We can hence approximate the inverter output as u = PWM*U_n
+            u = PWM_sat*Nominal_voltage 
+
+            sim_index += 1
+        end
+        # τ needs to be [0 0 τ_LH τ_RH τ_LK τ_RK 0 0]
         τ .= temp_τ
 
         return nothing
