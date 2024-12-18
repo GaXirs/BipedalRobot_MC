@@ -31,21 +31,29 @@ for col in 2:size(low_freq_signal, 2)  # Iterate over each data column
     # Plot the low-frequency signal
     plt = plot(
         t_low, low_freq_signal[:, col], label = "Low-Frequency Signal (50Hz)",
-        xlabel = "Time (s)", ylabel = "Signal Value",
+        xlabel = "Time (s)", ylabel = "Voltage",
         title = "Low-Frequency Signal (Data $col)",
         lw = 2
     )
     # Plot the high-resampled signal
     plot!(
-        t_low, high_resampled, label = "High-Frequency Resampled Signal (10kHz)",
+        t_low, high_resampled, label = "High-Frequency Resampled Signal (10kHz->50Hz)",
         lw = 2
     )
+    """
+    # If you want to see the difference between the resampled and original signal
+    # NB : there is no noticeable difference
+    plot!(
+        t_high, high_freq_signal[:,col], label = "High-Frequency Signal (10kHz)",
+        lw = 2
+    )
+    """
 
     # Save the Interpolation figures
     savefig(plt, joinpath(@__DIR__, "Images", "Simulation_interpolation", "signal_data_$col.png"))
     
     # Plot the high-frequency signal as a function of the low-frequency signal
-    plt = plot(
+    plt2 = plot(
         low_freq_signal[:, col], high_resampled, seriestype = :scatter,
         xlabel = "Low-Frequency Signal (50Hz)", ylabel = "High-Frequency Signal (10kHz)",
         title = "High-Frequency Signal vs Low-Frequency Signal (Data $col)"
@@ -54,6 +62,6 @@ for col in 2:size(low_freq_signal, 2)  # Iterate over each data column
     plot!(low_freq_signal[:, col], low_freq_signal[:, col], label = "f(x) = x", lw = 2, color = :red)
 
     # Save the robot signal and the interpolated simulation signal figures
-    savefig(plt, joinpath(@__DIR__, "Images", "Comparison", "signal_comparison_data_$col.png"))
+    savefig(plt2, joinpath(@__DIR__, "Images", "Comparison", "signal_comparison_data_$col.png"))
     
 end
