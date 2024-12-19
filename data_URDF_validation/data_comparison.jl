@@ -1,6 +1,7 @@
 using DelimitedFiles  
 using Plots           
 using Interpolations
+using Statistics
 
 Robot_signal = joinpath(@__DIR__,"..","data","WP_validation", "Inputs", "Voltage.txt")
 Simulation_signal = joinpath(@__DIR__,"..","data","simulation", "Opt_model", "Outputs", "Voltage.txt")
@@ -64,4 +65,13 @@ for col in 2:size(low_freq_signal, 2)  # Iterate over each data column
     # Save the robot signal and the interpolated simulation signal figures
     savefig(plt2, joinpath(@__DIR__, "Images", "Comparison", "signal_comparison_data_$col.png"))
     
+    # Calculate error, NRMSE, and standard deviation
+    error = low_freq_signal[:, col] - high_resampled
+    nrmse = sqrt(mean(error.^2)) / (maximum(low_freq_signal[:, col]) - minimum(low_freq_signal[:, col]))
+    std_error = std(error)
+
+    # Print or log the results
+    println("Data Column $col:")
+    println("  NRMSE: ", nrmse)
+    println("  Standard Deviation of Error: ", std_error)
 end
