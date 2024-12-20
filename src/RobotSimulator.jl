@@ -420,10 +420,10 @@ function dynamixel_controller(
                 τ_m .= i.* [HGR, HGR, KGR, KGR] .* kϕ
             elseif(torque_model == 1)
                 τ_0 = i.* [HGR, HGR, KGR, KGR] .* kϕ .- ω .* Kv
-                τ_m .= ifelse.(τ_0 .> 0, max.(τ_0 .- τc_i, 0.0), min.(τ_0 .+ τc_i, 0.0))
+                τ_m .= τ_0 .- sign.(ω) .* τc_i
             else
                 τ_0 = u .* [HGR, HGR, KGR, KGR] .* ktp  .- ω .* Kvp
-                τ_m .= ifelse.(τ_0 .> 0, max.(τ_0 .- τc_u, 0.0), min.(τ_0 .+ τc_u, 0.0))
+                τ_m .= τ_0 .- sign.(ω) .* τc_u
             end
             temp_τ[(end - 3 - ddl):(end - ddl)] .= τ_m
 

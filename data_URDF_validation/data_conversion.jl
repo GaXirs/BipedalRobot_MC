@@ -12,6 +12,9 @@ f1 = "WP_straightline_intheair"
 F2 = true
 f2 = "WP_validation"
 
+F3 = false
+f3 = "WP_validation_200Hz"
+
 FSimu = false
 torque_model = 2
 fS_1 = "Easiest_model"
@@ -29,7 +32,7 @@ interval = (0.0,5.0)      # Plot interval
 # [t,HL,KL,HR,KR] (LabView) -> [t,HL,HR,FL,FR] (Code)
 # H = Hip, K = Knee, R = Right, L = Left, t = Time
 permutation = [(1,1,1.0),(2,2,1.0), (3,4,1.0),(4,3,-1.0),(5,5,-1.0)]                                                                   
-Δt = 0.02               # 1/freq
+Δt = 1/freq                # 1/freq
 extension_factor = 20   # Padding between two values
 max_lines = 20001       # Limit the number of lines after padding
 remove_temp_file = true # removes non permutated files
@@ -99,7 +102,7 @@ function folder_full_process(folder_name::String)
     extend_data(out_torque_c_bm, simu_torque_c_bm, Δt, extension_factor; max_lines = max_lines)
     #extend_data(out_torque_c_om, simu_torque_c_om, Δt, extension_factor; max_lines = max_lines)
     extend_data(out_torque_v_bm, simu_torque_v_bm, Δt, extension_factor; max_lines = max_lines)
-    extend_data(out_torque_v_bm, simu_torque_v_om, Δt, extension_factor; max_lines = max_lines) 
+    extend_data(out_torque_v_om, simu_torque_v_om, Δt, extension_factor; max_lines = max_lines) 
 
     plot_path = joinpath(path, "Images")
     plot_data(in_position, plot_path, "Position"         ,interval)
@@ -124,6 +127,9 @@ if(F1)
 end
 if(F2)
    folder_full_process(f2)
+end
+if(F3)
+   folder_full_process(f3)
 end
 
 if(FSimu)

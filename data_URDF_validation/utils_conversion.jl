@@ -169,7 +169,8 @@ function to_torque_basic_model(current::Vector{Float64}, q̇::Vector{Float64})::
     # Simple motor model : τ = kϕ*i - τc - Kv ω
     ω = q̇[2:end] .* [HGR, HGR, KGR, KGR]
     τ_0 = current[2:end].* [HGR, HGR, KGR, KGR] .* kϕ .- ω .* Kv # τ = kϕ i - kv ω
-    τ = ifelse.(τ_0 .> 0, max.(τ_0 .- τc, 0.0), min.(τ_0 .+ τc, 0.0)) # # τ = kϕ i - kv ω - τc
+    # τ = ifelse.(τ_0 .> 0, max.(τ_0 .- τc, 0.0), min.(τ_0 .+ τc, 0.0)) # τ = kϕ i - kv ω - τc (static model)
+    τ = τ_0 .- sign.(ω) .* τc
 
     return append!([current[1]],τ)
 end
@@ -189,7 +190,8 @@ function to_torque_optimised_model(U::Vector{Float64}, q̇::Vector{Float64}):: V
     # Optimised motor model : τ = kt'*U - (τc + Kv'q̇) - C(q,q̇)
     ω = q̇[2:end] .* [HGR, HGR, KGR, KGR]
     τ_0 = U[2:end] .* [HGR, HGR, KGR, KGR] .* ktp  .- ω .* Kvp
-    τ = ifelse.(τ_0 .> 0, max.(τ_0 .- τc, 0.0), min.(τ_0 .+ τc, 0.0))
+    #τ = ifelse.(τ_0 .> 0, max.(τ_0 .- τc, 0.0), min.(τ_0 .+ τc, 0.0)) # Static model
+    τ = τ_0 .- sign.(ω) .* τc
     
     return append!([U[1]],τ)
 end
@@ -225,7 +227,7 @@ end
 # These functions allow to extend the files (add padding for simulation) and to plot them
 #-----------------------------------------------------------------------------------------------------------------
 
-function extend_data(input_file::String, output_file::String, δt::Float64, ext_fact::Int; max_lines::Union{Nothing, Int} = nothing)
+function extend_data(input_file::String, output_file::String, δt::Float64, ext_fact::Int64; max_lines::Union{Nothing, Int} = nothing)
     open(input_file, "r") do infile
         open(output_file, "w") do outfile
             total_lines_written = 0  # Counter for lines written to the output file

@@ -69,9 +69,12 @@ for col in 2:size(low_freq_signal, 2)  # Iterate over each data column
     error = low_freq_signal[:, col] - high_resampled
     nrmse = sqrt(mean(error.^2)) / (maximum(low_freq_signal[:, col]) - minimum(low_freq_signal[:, col]))
     std_error = std(error)
+    mean_error = mean(error)
 
     # Print or log the results
     println("Data Column $col:")
-    println("  NRMSE: ", nrmse)
-    println("  Standard Deviation of Error: ", std_error)
+    println("NRMSE: ", nrmse)
+    println("Standard Deviation of Error: ", std_error)
+    println("Mean Error: ", mean_error)
+    println("")
 end

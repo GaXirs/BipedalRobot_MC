@@ -32,11 +32,11 @@ write_torques = false;
 
 ctrl = false;
 
-data_from_CSV = false;
+data_from_CSV = true;
 
 torque_model = 2 # 0 for simples, 1 for basic and 2 for optimal
 
-filename_read = joinpath(@__DIR__, "..", "data", "WP_straightline_intheair", "Simulations", "Torque_v_om.txt");
+filename_read = joinpath(@__DIR__, "..", "data", "WP_validation_200Hz", "Simulations", "Torque_v_om.txt");
 filename_save = joinpath(@__DIR__, "..", "data", "WalkingPattern", "Outputs", "Torque.txt");
 CSV_file = joinpath(@__DIR__, "..", "data", "WalkingPattern", "Raw", "walkingPattern_ref.csv");
 
@@ -157,6 +157,7 @@ if(ctrl)
     ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);
 else
     if(data_from_CSV)
+        Δt = 1e-4 # Do not change
         tend = 20.0
         if(torque_model == 0)
             folder = joinpath(@__DIR__, "..", "data", "simulation", "Easiest_model", "Outputs")
