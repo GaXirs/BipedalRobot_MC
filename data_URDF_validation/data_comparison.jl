@@ -96,15 +96,34 @@ for col in 2:size(low_freq_signal, 2)  # Iterate over each data column
     # Optionally: Calculate error, NRMSE, and standard deviation of error
     error_ma = low_freq_signal[:, col] - ma_resampled
     error_ema = low_freq_signal[:, col] - ema_resampled
+
     nrmse_ma = sqrt(mean(error_ma.^2)) / (maximum(low_freq_signal[:, col]) - minimum(low_freq_signal[:, col]))
     std_error_ma = std(error_ma)
+    mean_error_ma = mean(error_ma)
+
     nrmse_ema = sqrt(mean(error_ema.^2)) / (maximum(low_freq_signal[:, col]) - minimum(low_freq_signal[:, col]))
     std_error_ema = std(error_ema)
+    mean_error_ema = mean(error_ema)
 
     # Print or log the results for both filters
     println("Data Column $col:")
     println("  Moving Average NRMSE: ", nrmse_ma)
     println("  Moving Average Std Error: ", std_error_ma)
+    println("  Mean Error: ", mean_error_ma)
     println("  EMA NRMSE: ", nrmse_ema)
     println("  EMA Std Error: ", std_error_ema)
+    println("  Mean Error: ", mean_error_ema)
+
+    # Plot the low-frequency signal as a function of the high-frequency signal
+    plt = plot(
+        low_freq_signal[:, col], ma_resampled, seriestype = :scatter,
+        xlabel = "High-Frequency Signal (10kHz)", ylabel = "Low-Frequency Signal (50Hz)",
+        title = "Low-Frequency Signal vs High-Frequency Signal (Data $col)"
+    )
+
+    # Add the function f(x) = x to the plot
+    plot!(low_freq_signal[:, col], low_freq_signal[:, col], label = "f(x) = x", lw = 2, color = :red)
+
+    # Save the robot signal and the interpolated simulation signal figures
+    savefig(plt, joinpath(@__DIR__, "Images", "Comparison", "signal_comparison_data_$col.png"))
 end
