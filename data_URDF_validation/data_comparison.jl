@@ -2,8 +2,11 @@ using DelimitedFiles
 using Plots           
 using Statistics
 
-Robot_signal = joinpath(@__DIR__,"..","data","WP_validation", "Inputs", "Voltage.txt")
-Simulation_signal = joinpath(@__DIR__,"..","data","simulation", "Opt_model", "Outputs", "Voltage.txt")
+File = "Voltage"
+data = ["", "Left Hip", "Right Hip", "Left Knee", "Right Knee"]
+
+Robot_signal = joinpath(@__DIR__,"..","data","WP_validation", "Inputs", File * ".txt")
+Simulation_signal = joinpath(@__DIR__,"..","data","simulation", "Opt_model", "Outputs", File * ".txt")
 
 # Load the signals from the text files
 low_freq_signal = readdlm(Robot_signal)  # 50Hz signal
@@ -77,11 +80,12 @@ for col in 2:size(low_freq_signal, 2)  # Iterate over each data column
     ma_resampled = resample_signal_closest(ma_filtered, t_high, t_low)
     ema_resampled = resample_signal_closest(ema_filtered, t_high, t_low)
 
+    
     # Plot the signals: original 10kHz, Moving Average and EMA filtered (downsampled)
     plt = plot(
         t_high, high_freq_signal[:, col], label = "Original High-Frequency Signal (10kHz)",
-        xlabel = "Time (s)", ylabel = "Voltage",
-        title = "Signal Comparison (Data $col)", lw = 0.1  # Finer lines
+        xlabel = "Time (s)", ylabel = File,
+        title = data[col] * " Simulation Signal Filtering Methods", lw = 0.1  # Finer lines
     )
     
     # Plot Moving Average filtered signal
@@ -91,7 +95,21 @@ for col in 2:size(low_freq_signal, 2)  # Iterate over each data column
     plot!(t_low, ema_resampled, label = "EMA Filtered (50Hz)", lw = 0.1)  # Finer lines
 
     # Save the figure
-    savefig(plt, joinpath(@__DIR__, "Images","Comparison", "Filtered_Signals", "signal_comparison_data_$col.pdf"))
+    savefig(plt, joinpath(@__DIR__, "Images", "Filtered_Signals", "signal_comparison_data_$File$col.pdf"))
+
+    # Plot the signals: Moving Average and Robot data
+    plt = plot(
+        t_low, ma_resampled, label = "Moving Averaged Simulation",
+        xlabel = "Time (s)", ylabel = File,
+        title = data[col] * " Signal Comparison", lw = 2,
+        xlims=(0, 5) 
+    )
+    
+    plot!(t_low, low_freq_signal[:, col], label = "Robot Output", lw = 2, xlims=(0, 5)) 
+
+    # Save the figure
+    savefig(plt, joinpath(@__DIR__, "Images", "Simulation_vs_robot", "signal_simuvsrobot_$File$col.pdf"))
+
 
     # Optionally: Calculate error, NRMSE, and standard deviation of error
     error_ma = low_freq_signal[:, col] - ma_resampled
@@ -115,15 +133,15 @@ for col in 2:size(low_freq_signal, 2)  # Iterate over each data column
     println("  Mean Error: ", mean_error_ema)
 
     # Plot the low-frequency signal as a function of the high-frequency signal
-    plt = plot(
+    plt1 = plot(
         low_freq_signal[:, col], ma_resampled, seriestype = :scatter,
-        xlabel = "High-Frequency Signal (10kHz)", ylabel = "Low-Frequency Signal (50Hz)",
-        title = "Low-Frequency Signal vs High-Frequency Signal (Data $col)"
+        xlabel = "Robot output", ylabel = "Simulation output",
+        title = data[col] * " Simulation Output vs Simulation Output"
     )
 
     # Add the function f(x) = x to the plot
     plot!(low_freq_signal[:, col], low_freq_signal[:, col], label = "f(x) = x", lw = 2, color = :red)
 
     # Save the robot signal and the interpolated simulation signal figures
-    savefig(plt, joinpath(@__DIR__, "Images", "Comparison", "signal_comparison_data_$col.png"))
+    savefig(plt1, joinpath(@__DIR__, "Images", "Comparison", "signal_comparison_data_$File$col.png"))
 end
