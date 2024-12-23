@@ -2,10 +2,10 @@ using DelimitedFiles
 using Plots           
 using Statistics
 
-File = "Voltage"
+File = "Position"
 data = ["", "Left Hip", "Right Hip", "Left Knee", "Right Knee"]
 
-Robot_signal = joinpath(@__DIR__,"..","data","WP_validation", "Inputs", File * ".txt")
+Robot_signal = joinpath(@__DIR__,"..","data","WP_validation_200Hz", "Inputs", File * ".txt")
 Simulation_signal = joinpath(@__DIR__,"..","data","simulation", "Opt_model", "Outputs", File * ".txt")
 
 # Load the signals from the text files
@@ -13,7 +13,7 @@ low_freq_signal = readdlm(Robot_signal)  # 50Hz signal
 high_freq_signal = readdlm(Simulation_signal)  # 10kHz signal
 
 # Define parameters of the signals
-low_freq_sampling_rate = 50   # Sampling rate of the low-frequency signal (Hz)
+low_freq_sampling_rate = 200   # Sampling rate of the low-frequency signal (Hz)
 high_freq_sampling_rate = 10000  # Sampling rate of the high-frequency signal (Hz)
 duration = 20  # Duration of the signals (seconds)
 
