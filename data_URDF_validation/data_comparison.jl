@@ -10,7 +10,12 @@ Simulation_signal = joinpath(@__DIR__,"..","data","simulation", "Opt_model", "Ou
 
 # Load the signals from the text files
 low_freq_signal = readdlm(Robot_signal)  # 50Hz signal
-high_freq_signal = readdlm(Simulation_signal)  # 10kHz signal
+if(File == "Position")
+    high_freq_signal = readdlm(Simulation_signal) .* (180 / π)  # 10kHz signal
+else
+    high_freq_signal = readdlm(Simulation_signal)  # 10kHz signal
+end
+
 
 # Define parameters of the signals
 low_freq_sampling_rate = 200   # Sampling rate of the low-frequency signal (Hz)
@@ -132,16 +137,18 @@ for col in 2:size(low_freq_signal, 2)  # Iterate over each data column
     println("  EMA Std Error: ", std_error_ema)
     println("  Mean Error: ", mean_error_ema)
 
-    # Plot the low-frequency signal as a function of the high-frequency signal
-    plt1 = plot(
-        low_freq_signal[:, col], ma_resampled, seriestype = :scatter,
-        xlabel = "Robot output", ylabel = "Simulation output",
-        title = data[col] * " Simulation Output vs Simulation Output"
-    )
+    if File != "Position"
+        # Plot the low-frequency signal as a function of the high-frequency signal
+        plt1 = plot(
+            low_freq_signal[1:1001, col], ma_resampled[1:1001], seriestype = :scatter,
+            xlabel = "Robot output", ylabel = "Simulation output",
+            title = data[col] * " Simulation Output vs Simulation Output"
+        )
 
-    # Add the function f(x) = x to the plot
-    plot!(low_freq_signal[:, col], low_freq_signal[:, col], label = "f(x) = x", lw = 2, color = :red)
+        # Add the function f(x) = x to the plot
+        plot!(low_freq_signal[1:1001, col], low_freq_signal[1:1001, col], label = "f(x) = x", lw = 2, color = :red)
 
-    # Save the robot signal and the interpolated simulation signal figures
-    savefig(plt1, joinpath(@__DIR__, "Images", "Comparison", "signal_comparison_data_$File$col.png"))
+        # Save the robot signal and the interpolated simulation signal figures
+        savefig(plt1, joinpath(@__DIR__, "Images", "Comparison", "signal_comparison_data_$File$col.png"))
+    end
 end

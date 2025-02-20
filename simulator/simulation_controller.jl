@@ -30,7 +30,7 @@ MODEL_2D = true;
 
 write_torques = false;
 
-ctrl = false;
+ctrl = false; # activate ctroller Xing
 
 data_from_CSV = true;
 

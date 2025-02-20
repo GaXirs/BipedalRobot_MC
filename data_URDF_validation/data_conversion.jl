@@ -9,13 +9,13 @@ include("utils_conversion.jl")
 F1 = false
 f1 = "WP_straightline_intheair"
 
-F2 = true
+F2 = false
 f2 = "WP_validation"
 
 F3 = false
 f3 = "WP_validation_200Hz"
 
-FSimu = false
+FSimu = true
 torque_model = 2
 fS_1 = "Easiest_model"
 fS_2 = "Basic_model"

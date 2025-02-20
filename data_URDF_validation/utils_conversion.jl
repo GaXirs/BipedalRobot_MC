@@ -146,10 +146,10 @@ function to_torque_frictionless_model(current::Vector{Float64}, q̇::Vector{Floa
     # Motor Caracteristics: S. Deligne
     HGR = 353.5         # Hip gear-ratio
     KGR = 212.6         # Knee gear-ratio
-    kϕ  = 3.6103/HGR    # Back-EMF constant ke' [Nm*s/rad] (linked to joint speed) 
+    kt  = 3.6103/HGR    # Back-EMF constant ke' [Nm*s/rad] (linked to joint speed) 
 
     # Frictionless motor model : τ = kϕ*i
-    τ = current[2:end].* [HGR, HGR, KGR, KGR] .* kϕ
+    τ = current[2:end].* [HGR, HGR, KGR, KGR] .* kt
     
     return append!([current[1]],τ)
 end
@@ -162,15 +162,15 @@ function to_torque_basic_model(current::Vector{Float64}, q̇::Vector{Float64})::
     # Motor Caracteristics: S. Deligne
     HGR = 353.5         # Hip gear-ratio
     KGR = 212.6         # Knee gear-ratio
-    Kv  = 0.22/HGR      # Viscous friction constant [Nm*s/rad] (linked to joint speed)
-    τc  = 0.128         # Dry friction torque [Nm]
-    kϕ  = 3.6103/HGR    # Back-EMF constant ke' [Nm*s/rad] (linked to joint speed) 
+    Kv  = 0.22/(HGR*HGR)      # Viscous friction constant [Nm*s/rad] (linked to joint speed)
+    τc  = 0.128/HGR         # Dry friction torque [Nm]
+    kt  = 3.6103/HGR    # Back-EMF constant ke' [Nm*s/rad] (linked to joint speed) 
 
     # Simple motor model : τ = kϕ*i - τc - Kv ω
     ω = q̇[2:end] .* [HGR, HGR, KGR, KGR]
-    τ_0 = current[2:end].* [HGR, HGR, KGR, KGR] .* kϕ .- ω .* Kv # τ = kϕ i - kv ω
+    τ_0 = current[2:end].* [HGR, HGR, KGR, KGR] .* kt .- ω .* [HGR, HGR, KGR, KGR] .* Kv # τ = kϕ i - kv ω
     # τ = ifelse.(τ_0 .> 0, max.(τ_0 .- τc, 0.0), min.(τ_0 .+ τc, 0.0)) # τ = kϕ i - kv ω - τc (static model)
-    τ = τ_0 .- sign.(ω) .* τc
+    τ = τ_0 .- sign.(ω) .* [HGR, HGR, KGR, KGR] .* τc
 
     return append!([current[1]],τ)
 end
@@ -184,14 +184,14 @@ function to_torque_optimised_model(U::Vector{Float64}, q̇::Vector{Float64}):: V
     HGR = 353.5           # Hip gear-ratio
     KGR = 212.6           # Knee gear-ratio
     ktp  = 0.395/HGR      # Torque constant with respect to the voltage [Nm/V] 
-    Kvp  = 1.589/HGR      # Viscous friction constant [Nm*s/rad] (linked to motor speed)
-    τc  = 0.065           # Dry friction torque [Nm]
+    Kvp  = 1.589/(HGR*HGR)      # Viscous friction constant [Nm*s/rad] (linked to motor speed)
+    τc  = 0.065/HGR           # Dry friction torque [Nm]
 
     # Optimised motor model : τ = kt'*U - (τc + Kv'q̇) - C(q,q̇)
     ω = q̇[2:end] .* [HGR, HGR, KGR, KGR]
-    τ_0 = U[2:end] .* [HGR, HGR, KGR, KGR] .* ktp  .- ω .* Kvp
+    τ_0 = U[2:end] .* [HGR, HGR, KGR, KGR] .* ktp  .- ω .* [HGR, HGR, KGR, KGR] .* Kvp
     #τ = ifelse.(τ_0 .> 0, max.(τ_0 .- τc, 0.0), min.(τ_0 .+ τc, 0.0)) # Static model
-    τ = τ_0 .- sign.(ω) .* τc
+    τ = τ_0 .- sign.(ω) .* [HGR, HGR, KGR, KGR] .* τc
     
     return append!([U[1]],τ)
 end
