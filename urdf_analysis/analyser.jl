@@ -1,3 +1,7 @@
+using RigidBodyDynamics
+using MeshCat, MeshCatMechanisms, Blink
+using MechanismGeometries
+
 # Load the URDF from the current folder
 urdfpath()= joinpath(pwd(), "ZMP_2DBipedRobot_nodamping.urdf")
 mechanism = RigidBodyDynamics.parse_urdf(urdfpath())
