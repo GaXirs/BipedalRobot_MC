@@ -2,7 +2,7 @@
 
 julia_version = "1.11.1"
 manifest_format = "2.0"
-project_hash = "16cc39ca893d38f6a44ceb9066aec467a534b264"
+project_hash = "fa984bb40bc20ddae295ccf666ba054a2fce66a2"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "72af59f5b8f09faee36b4ec48e014a79210f2f4f"
@@ -1761,6 +1761,12 @@ version = "1.0.0"
 git-tree-sha1 = "cd1659ba0d57b71a464a29e64dbc67cfe83d54e7"
 uuid = "76eceee3-57b5-4d4a-8e66-0e911cebbf60"
 version = "1.6.1"
+
+[[deps.XML]]
+deps = ["Mmap", "OrderedCollections"]
+git-tree-sha1 = "360c178fdee6816bcc9d436c6f324d582e84f1d1"
+uuid = "72c71f33-b9b6-44de-8c94-c961784809e2"
+version = "0.3.4"
 
 [[deps.XML2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libiconv_jll", "Zlib_jll"]
