@@ -77,7 +77,7 @@ function fill_state!(x)
     # Set additional constraints
     # The x position is set to 0
     # The feet are kept // to the ground 
-    q[1] = 0
+    
     q[7] = -(q[3] + q[5])
     q[8] = -(q[4] + q[6])
 
@@ -91,8 +91,10 @@ function fill_state!(x)
         i1,i2 = 4,6
     end
     # speed equations of the double pendulum
+    x = Lthigh * sin(q[i1]) + Lleg * sin(q[i2] + q[i1])
     ẋ = Lthigh * q̇[i1] * cos(q[i1]) + Lleg * (q̇[i1] + q̇[i2]) * cos(q[i1] + q[i2])
     ż = -(Lthigh * q̇[i1] * sin(q[i1]) + Lleg * (q̇[i1] + q̇[i2]) * sin(q[i1] + q[i2]))
+    q[1] = x
     q̇[1] = ẋ
     q̇[2] = ż
 
