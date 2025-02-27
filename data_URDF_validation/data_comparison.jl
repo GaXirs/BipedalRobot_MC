@@ -2,7 +2,7 @@ using DelimitedFiles
 using Plots           
 using Statistics
 
-File = "Position"
+File = "Voltage"
 data = ["", "Left Hip", "Right Hip", "Left Knee", "Right Knee"]
 
 Robot_signal = joinpath(@__DIR__,"..","data","WP_validation_200Hz", "Inputs", File * ".txt")
@@ -57,7 +57,7 @@ end
 ma_window_size = round(Int, high_freq_sampling_rate / low_freq_sampling_rate)
 
 # Set the smoothing factor for the Exponential Moving Average
-alpha = 2 / (ma_window_size*0.02 + 1)  # typical value for EMA
+alpha = 2 / (ma_window_size*0.04 + 1)  # typical value for EMA
 
 # Resample the signal by taking the closest point from the high-frequency signal
 function resample_signal_closest(signal, t_original, t_target)
@@ -97,7 +97,7 @@ for col in 2:size(low_freq_signal, 2)  # Iterate over each data column
     plot!(t_low, ma_resampled, label = "Moving Average Filtered (50Hz)", lw = 0.1)  # Finer lines
 
     # Plot Exponential Moving Average filtered signal
-    plot!(t_low, ema_resampled, label = "EMA Filtered (50Hz)", lw = 0.1)  # Finer lines
+    #plot!(t_low, ema_resampled, label = "EMA Filtered (50Hz)", lw = 0.1)  # Finer lines
 
     # Save the figure
     savefig(plt, joinpath(@__DIR__, "Images", "Filtered_Signals", "signal_comparison_data_$File$col.pdf"))
@@ -106,7 +106,7 @@ for col in 2:size(low_freq_signal, 2)  # Iterate over each data column
     plt = plot(
         t_low, ma_resampled, label = "Moving Averaged Simulation",
         xlabel = "Time (s)", ylabel = File,
-        title = data[col] * " Signal Comparison", lw = 2,
+        title = data[col] * " $File Comparison", lw = 2,
         xlims=(0, 5) 
     )
     
@@ -133,9 +133,9 @@ for col in 2:size(low_freq_signal, 2)  # Iterate over each data column
     println("  Moving Average NRMSE: ", nrmse_ma)
     println("  Moving Average Std Error: ", std_error_ma)
     println("  Mean Error: ", mean_error_ma)
-    println("  EMA NRMSE: ", nrmse_ema)
-    println("  EMA Std Error: ", std_error_ema)
-    println("  Mean Error: ", mean_error_ema)
+    #println("  EMA NRMSE: ", nrmse_ema)
+    #println("  EMA Std Error: ", std_error_ema)
+    #println("  Mean Error: ", mean_error_ema)
 
     if File != "Position"
         # Plot the low-frequency signal as a function of the high-frequency signal
