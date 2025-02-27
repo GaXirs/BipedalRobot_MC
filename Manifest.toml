@@ -2,7 +2,7 @@
 
 julia_version = "1.11.1"
 manifest_format = "2.0"
-project_hash = "fa984bb40bc20ddae295ccf666ba054a2fce66a2"
+project_hash = "8c22a5514cf05afec76027327dbe8ebb3d920272"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "72af59f5b8f09faee36b4ec48e014a79210f2f4f"
@@ -393,6 +393,12 @@ deps = ["Artifacts", "JLLWrappers", "Libdl"]
 git-tree-sha1 = "8a4be429317c42cfae6a7fc03c31bad1970c310d"
 uuid = "2702e6a9-849d-5ed8-8c21-79e8b8f9ee43"
 version = "0.0.20230411+1"
+
+[[deps.Espresso]]
+deps = ["LinearAlgebra", "Statistics", "Test"]
+git-tree-sha1 = "077f5b899ab7a0c62eaf7cd8b832c45119a9e859"
+uuid = "6912e4f1-e036-58b0-9138-08d1e6358ea9"
+version = "0.6.3"
 
 [[deps.ExceptionUnwrapping]]
 deps = ["Test"]
@@ -913,6 +919,12 @@ version = "0.5.13"
 deps = ["Base64"]
 uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
 version = "1.11.0"
+
+[[deps.MathematicalSystems]]
+deps = ["Espresso", "InteractiveUtils", "LinearAlgebra", "MacroTools", "MultivariatePolynomials", "RecipesBase", "SparseArrays"]
+git-tree-sha1 = "5838a28f307a5100cbd9326f5fc1812910eeb018"
+uuid = "d14a8603-c872-5ed3-9ece-53e0e82e39da"
+version = "0.13.6"
 
 [[deps.MbedTLS]]
 deps = ["Dates", "MbedTLS_jll", "MozillaCACerts_jll", "NetworkOptions", "Random", "Sockets"]
