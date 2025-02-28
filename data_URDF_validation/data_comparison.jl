@@ -2,7 +2,7 @@ using DelimitedFiles
 using Plots           
 using Statistics
 
-File = "Voltage"
+File = "Position"
 data = ["", "Left Hip", "Right Hip", "Left Knee", "Right Knee"]
 
 Robot_signal = joinpath(@__DIR__,"..","data","WP_validation_200Hz", "Inputs", File * ".txt")
