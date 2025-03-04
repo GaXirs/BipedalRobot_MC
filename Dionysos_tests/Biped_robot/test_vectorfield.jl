@@ -10,14 +10,14 @@ using MechanismGeometries
 # Define a sample state x (positions and velocities)
 # Assuming the robot starts in a neutral position
 x_test = SVector{8}(
-    0.0, 0.0, 
-    0.0, 0.0,
+    -0.1745329, 0.0, 
+    0.1745329, 0.0,
     0.0, 0.0, 
     0.0, 0.0 
 )
 
 # Define a sample input u (voltages to motors)
-u_test = SVector{4}(0.0, 0.2, 0.5, -0.2)  # Example voltage inputs
+u_test = SVector{4}(0.0, 1.0, 0.0, 0.0)  # Example voltage inputs
 
 # Call the vector field function
 x_next,full_state = RobotProblem.vectorFieldBipedRobot(x_test, u_test)

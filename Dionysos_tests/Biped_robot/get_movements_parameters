@@ -1,0 +1,37 @@
+using Printf
+# This code is used to determine what would be a reasonnable range for the motor positions
+
+
+# Function to calculate alpha and X
+function compute_geometry(Lt, Ll, theta)
+    # Convert theta to radians
+    theta_rad = deg2rad(theta)
+
+    # Compute alpha using the law of cosines
+    alpha_rad = acos((Ll + Lt * cos(theta_rad)) / (Lt + Ll))
+    alpha_deg = rad2deg(alpha_rad)  # Convert to degrees
+
+    # Compute X (horizontal distance)
+    X = sin(alpha_rad) * (Lt + Ll) + sin(theta_rad) * Lt
+
+    return alpha_deg, X
+end
+
+# Example usage
+Lt = 0.20125  # Length of the thigh
+Ll = 0.172   # Length of the lower leg
+theta = 15  # Bent knee angle in degrees
+
+alpha, X = compute_geometry(Lt, Ll, theta)
+
+# Print results
+@printf "Alpha (hip angle) = %.3f degrees\n" alpha
+@printf "Distance between feet (X) = %.3f meters\n" X
+@printf "\n"
+
+theta = 10
+alpha, X = compute_geometry(Lt, Ll, theta)
+
+# Print results
+@printf "Alpha (hip angle) = %.3f degrees\n" alpha
+@printf "Distance between feet (X) = %.3f meters\n" X

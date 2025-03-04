@@ -167,7 +167,7 @@ else
             folder = joinpath(@__DIR__, "..", "data", "simulation", "Opt_model", "Outputs")
         end
         # Simulate the robot
-        controller! = ZMProbot.dynamixel_controller(rs, tend, Δt, CSV_file, folder; freq=50.0, torque_model=torque_model, write_in_folder=true)
+        controller! = ZMProbot.dynamixel_controller(rs, tend, Δt, CSV_file, folder; freq=50.0, torque_model=torque_model, write_in_folder=false)
         ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);
     else
         tend = 20.0

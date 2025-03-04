@@ -51,6 +51,36 @@ function voltage_controller!(
     end
 end
 
+function DXL_controller!(
+    q_ref::SVector
+)
+    ddl=2
+    Kp = 900.0 / 128.0
+    PWM_goal = 885.0
+    Nominal_voltage = 12.0
+
+    current_q = [0.0,0.0,0.0,0.0]
+    u = [0.0,0.0,0.0,0.0]
+    ω = [0.0,0.0,0.0,0.0]
+    τ_m = [0.0,0.0,0.0,0.0]
+
+    function controller!(τ, t, state)
+        current_q .= configuration(state)[(end - 3 - ddl):(end - ddl)]
+        current_̇q = velocity(state)[(end - 3 - ddl):(end - ddl)]
+
+        PWM = (q_ref .- current_q) .* (4095.0/(2π)* Kp) # Only true because profile acceleration and profile velocity are null
+        PWM_sat = clamp.(PWM, -PWM_goal, PWM_goal)# Apply_saturation
+
+        u .= PWM_sat .* (Nominal_voltage / 885.0)
+        ω .= current_̇q .* [HGR, HGR, KGR, KGR]
+
+        τ_0 = u .* [HGR, HGR, KGR, KGR] .* ktp  .- ω .* [HGR, HGR, KGR, KGR] .* Kvp
+        τ_m .= τ_0 .- sign.(ω) .* [HGR, HGR, KGR, KGR] .* τc_u
+
+        τ[(end - 3 - ddl):(end - ddl)] .= τ_m
+    end
+end
+
 ## Robots Parameters ##
 Lthigh = 0.20125
 Lleg = 0.172
@@ -112,7 +142,7 @@ function vectorFieldBipedRobot(x, u)
     set_configuration!(state, q)
     set_velocity!(state, q̇)
 
-    controller! = voltage_controller!(u)
+    controller! = DXL_controller!(u)
     ts, qs, vs  = RigidBodyDynamics.simulate(state, Δt_dionysos, controller!; Δt = Δt_simu);
     
     x_next = SVector{length(x)}(qs[end][3:6]..., vs[end][3:6]...)
