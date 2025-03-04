@@ -114,7 +114,7 @@ if(ctrl)
         br = ZMProbot.BipedRobot(;
             readFile = true,
             URDFfileName = robot_model,
-            paramFileName = "param.jl",
+            paset_visulalizerramFileName = "param.jl",
         )
         br.xPath = xPath;
         br.yPath = yPath;

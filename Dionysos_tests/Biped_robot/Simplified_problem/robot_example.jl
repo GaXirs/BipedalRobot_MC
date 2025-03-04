@@ -11,7 +11,7 @@ const SY = DI.Symbolic
 const OP = DI.Optim
 const AB = OP.Abstraction
 
-include(joinpath(dirname(dirname(pathof(Dionysos))), "problems/Biped_robot", "robot_problem.jl"))
+include(joinpath(dirname(dirname(pathof(Dionysos))), "problems/Biped_robot/Free_fall", "robot_problem.jl"))
 
 concrete_problem = RobotProblem.problem(; tstep = 2e-2)
 concrete_system = concrete_problem.system

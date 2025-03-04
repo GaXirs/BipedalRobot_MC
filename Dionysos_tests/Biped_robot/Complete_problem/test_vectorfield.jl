@@ -10,8 +10,8 @@ using MechanismGeometries
 # Define a sample state x (positions and velocities)
 # Assuming the robot starts in a neutral position
 x_test = SVector{8}(
-    -0.1745329, 0.0, 
-    0.1745329, 0.0,
+    0, 0.0, 
+    0, 0.0,
     0.0, 0.0, 
     0.0, 0.0 
 )
@@ -20,7 +20,7 @@ x_test = SVector{8}(
 u_test = SVector{4}(0.0, 1.0, 0.0, 0.0)  # Example voltage inputs
 
 # Call the vector field function
-x_next,full_state = RobotProblem.vectorFieldBipedRobot(x_test, u_test)
+x_next,full_state,ts,qs,vs = RobotProblem.vectorFieldBipedRobot(x_test, u_test)
 q, dq = RobotProblem.fill_state!(x_next)
 filled_state = [q..., dq...]
 
@@ -33,8 +33,8 @@ println("Formatted percentage  : [", join(round.((filled_state .- full_state)./ 
 #println("Next state: ", x_next)
 
 # Load the URDF from the current folder
-#urdfpath()= joinpath(pwd(), "Robot_SD_fixed.urdf")
-urdfpath() = joinpath(pwd(),"deps",  "ZMP_2DBipedRobot_nodamping.urdf")
+"""
+urdfpath() = joinpath(@__DIR__, "..", "deps",  "ZMP_2DBipedRobot_nodamping.urdf")
 mechanism = RigidBodyDynamics.parse_urdf(urdfpath())
 state = MechanismState(mechanism)
 
@@ -50,6 +50,9 @@ for body in robot_bodies
     frame = RigidBodyDynamics.default_frame(body)
     setelement!(vis, frame)
 end
-
+"""
 # Visualize the robot
+
 open(vis)
+sleep(2)
+MeshCatMechanisms.animate(vis, ts, qs)
