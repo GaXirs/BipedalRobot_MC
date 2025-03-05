@@ -22,7 +22,7 @@ state = MechanismState(mechanism)
 n_pos = num_positions(state)
 n_vel = num_velocities(state)
 Δt_simu     = 1e-4       # Simulation step 
-Δt_dionysos = 1.5        # Dinoysos time discretisation, nominal 50Hz (control freq of the material robot)
+Δt_dionysos = 0.02        # Dinoysos time discretisation, nominal 50Hz (control freq of the material robot)
 
 println("n_pos: ", n_pos)
 println("n_vel: ", n_vel)
@@ -50,7 +50,8 @@ function voltage_controller!(
         current_̇q = velocity(state)[(end - 3 - ddl):(end - ddl)]
         ω = current_̇q .* [HGR, HGR, KGR, KGR]
 
-        PWM = (q_ref .- current_q[3:4]) .* (4095.0/(2π)* Kp) # Only true because profile acceleration and profile velocity are null
+        # DXL controller on the right knee
+        PWM = (q_ref .- current_q[4]) .* (4095.0/(2π)* Kp) # Only true because profile acceleration and profile velocity are null
         PWM_sat = clamp.(PWM, -885.0, 885.0)# Apply_saturation
         u_K = PWM_sat .* (12.0 / 885.0)
 
@@ -71,8 +72,8 @@ Foot_height = 0.009
 Init_offset = -0.0006559432
 function fill_state!(x)
     # Create q
-    q = vcat(zeros(2), x[1:2], zeros(4))
-    q̇ = vcat(zeros(2), x[3:4], zeros(4))
+    q = vcat(zeros(2), x[1:3], zeros(3))
+    q̇ = vcat(zeros(2), x[4:6], zeros(3))
     
     # Compute the heights of the two legs (double pendulums)
     zl = Lthigh * cos(q[3]) + Lleg * cos(q[5] + q[3])
@@ -127,7 +128,7 @@ function vectorFieldBipedRobot(x, u, q_ref)
     controller! = voltage_controller!(u, q_ref)
     ts, qs, vs  = RigidBodyDynamics.simulate(state, Δt_dionysos, controller!; Δt = Δt_simu);
     
-    x_next = SVector{length(x)}(qs[end][3:4]..., vs[end][3:4]...)
+    x_next = SVector{length(x)}(qs[end][3:5]..., vs[end][3:5]...)
     full_state = SVector{2 * length(qs[end])}(qs[end]..., vs[end]...)
     
     #println("Output of simulation")
