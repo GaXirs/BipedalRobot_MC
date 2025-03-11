@@ -50,7 +50,7 @@ if MODEL_2D
     yPath = 1.18 .+ 0.0 .* t
     xPath = 0.01 * t
     θ_0 = 0
-    robot_model = "ZMP_2DBipedRobot_nodamping.urdf"
+    robot_model = "Robot_CM_no_damping.urdf"
 else
     ## Circle path for 3D Robot Model 
     t = vec(100:-1:75)
@@ -164,10 +164,10 @@ else
         elseif(torque_model == 1)
             folder = joinpath(@__DIR__, "..", "data", "simulation", "Basic_model", "Outputs")
         else
-            folder = joinpath(@__DIR__, "..", "data", "simulation", "Opt_model", "Outputs")
+            folder = joinpath(@__DIR__, "..", "data", "simulation", "Opt_model", "No_damping", "Outputs")
         end
         # Simulate the robot
-        controller! = ZMProbot.dynamixel_controller(rs, tend, Δt, CSV_file, folder; freq=50.0, torque_model=torque_model, write_in_folder=false)
+        controller! = ZMProbot.dynamixel_controller(rs, tend, Δt, CSV_file, folder; freq=50.0, torque_model=torque_model, write_in_folder=true)
         ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);
     else
         tend = 20.0
