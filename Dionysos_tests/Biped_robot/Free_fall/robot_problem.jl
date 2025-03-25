@@ -22,7 +22,7 @@ state = MechanismState(mechanism)
 n_pos = num_positions(state)
 n_vel = num_velocities(state)
 Δt_simu     = 1e-4       # Simulation step 
-Δt_dionysos = 1.5        # Dinoysos time discretisation, nominal 50Hz (control freq of the material robot)
+Δt_dionysos = 0.2        # Dinoysos time discretisation, nominal 50Hz (control freq of the material robot)
 
 println("n_pos: ", n_pos)
 println("n_vel: ", n_vel)

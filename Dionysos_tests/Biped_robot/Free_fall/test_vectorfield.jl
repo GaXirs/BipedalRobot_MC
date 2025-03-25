@@ -10,7 +10,7 @@ using MechanismGeometries
 # Define a sample state x (positions and velocities)
 # Assuming the robot starts in a neutral position
 x_test = SVector{4}(
-    7.0*π/180, 7.0*π/180, 
+    0, 0, 
     0.0, 0.0
 )
 
