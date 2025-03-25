@@ -15,11 +15,14 @@ f2 = "WP_validation"
 F3 = false
 f3 = "WP_validation_200Hz"
 
-FSimu = true
+FSimu = false
 torque_model = 2
 fS_1 = "Easiest_model"
 fS_2 = "Basic_model"
 fS_3 = "Opt_model"
+
+FDionysos = true
+fSD = "Dionysos"
 
 FWP = false
 fWP = "WalkingPattern"
@@ -27,8 +30,8 @@ fWP = "WalkingPattern"
 #----------------------------------------------------------------------------
 #                       FILE DETAILS
 #----------------------------------------------------------------------------
-freq = 50.0            # Frequency of measurements
-interval = (0.0,5.0)      # Plot interval
+freq = 10.0            # Frequency of measurements
+interval = (0.0,2.0)      # Plot interval
 # [t,HL,KL,HR,KR] (LabView) -> [t,HL,HR,FL,FR] (Code)
 # H = Hip, K = Knee, R = Right, L = Left, t = Time
 permutation = [(1,1,1.0),(2,2,1.0), (3,4,1.0),(4,3,-1.0),(5,5,-1.0)]                                                                   
@@ -146,6 +149,16 @@ if(FSimu)
    plot_data(joinpath(path, "Outputs", "Voltage.txt"), joinpath(path, "Images"), "Voltage", interval)
    plot_data(joinpath(path, "Outputs", "Position.txt"), joinpath(path, "Images"), "Position", interval)
 end
+
+if(FDionysos)
+   path = joinpath(@__DIR__, "..", "data", fSD)
+   plot_data(joinpath(path, "Outputs", "Torque.txt"), joinpath(path, "Images"), "Torque", interval)
+   plot_data(joinpath(path, "Outputs", "Current.txt"), joinpath(path, "Images"), "Current", interval)
+   plot_data(joinpath(path, "Outputs", "Velocity.txt"), joinpath(path, "Images"), "Velocity", interval)
+   plot_data(joinpath(path, "Outputs", "Voltage.txt"), joinpath(path, "Images"), "Voltage", interval)
+   plot_data(joinpath(path, "Outputs", "Position.txt"), joinpath(path, "Images"), "Position", interval)
+end
+
 if(FWP)
    path = joinpath(@__DIR__, "..", "data", fWP)
    plot_data(joinpath(path, "Outputs", "Torque.txt"), joinpath(path, "Images"), "Torques_Xing", interval)

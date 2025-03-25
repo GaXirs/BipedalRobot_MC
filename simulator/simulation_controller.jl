@@ -159,16 +159,16 @@ if(ctrl)
 else
     if(data_from_CSV)
         Δt = 1e-4 # Do not change
-        tend = 0.7
+        tend = 2.0
         if(torque_model == 0)
             folder = joinpath(@__DIR__, "..", "data", "simulation", "Easiest_model", "Outputs")
         elseif(torque_model == 1)
             folder = joinpath(@__DIR__, "..", "data", "simulation", "Basic_model", "Outputs")
         else
-            folder = joinpath(@__DIR__, "..", "data", "simulation", "Opt_model", "No_damping", "Outputs")
+            folder = joinpath(@__DIR__, "..", "data", "Dionysos", "Outputs")
         end
         # Simulate the robot
-        controller! = ZMProbot.dynamixel_controller(rs, tend, Δt, CSV_file, folder; freq=10.0, torque_model=torque_model, write_in_folder=false)
+        controller! = ZMProbot.dynamixel_controller(rs, tend, Δt, CSV_file, folder; freq=10.0, torque_model=torque_model, write_in_folder=true)
         ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);
     else
         tend = 20.0
@@ -181,5 +181,7 @@ end
 if ANIMATE_RESULT
     open(vis)
     sleep(10)
-    MeshCatMechanisms.animate(vis, ts, qs)
+
+    animation = MeshCat.Animation(vis, ts, qs)
+    setanimation!(vis, animation)
 end

@@ -74,8 +74,8 @@ alpha, X = compute_geometry_non_vertical(Lt, Ll, thetaH, thetaK)
 @printf "Distance between feet (X) = %.3f meters\n" X
 @printf "\n"
 
-thetaH = 9.81
-thetaK = 11.33
+thetaH = 10.0
+thetaK = 11.0
 alpha, X = compute_geometry_non_vertical(Lt, Ll, thetaH, thetaK)
 
 # Print results
