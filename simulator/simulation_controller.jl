@@ -39,7 +39,8 @@ torque_model = 2 # 0 for simples, 1 for basic and 2 for optimal
 filename_read = joinpath(@__DIR__, "..", "data", "WP_validation_200Hz", "Simulations", "Torque_v_om.txt");
 filename_save = joinpath(@__DIR__, "..", "data", "WalkingPattern", "Outputs", "Torque.txt");
 #CSV_file = joinpath(@__DIR__, "..", "data", "WalkingPattern", "Raw", "walkingPattern_ref.csv");
-CSV_file = joinpath(@__DIR__, "..", "Dionysos_tests", "Biped_robot", "Dionysos_trajectory.csv");
+CSV_file_one_sided = joinpath(@__DIR__, "..", "Dionysos_tests", "Biped_robot", "Dionysos_trajectory_one_sided.csv");
+CSV_file_two_sided = joinpath(@__DIR__, "..", "Dionysos_tests", "Biped_robot", "Dionysos_trajectory_two_sided.csv");
 
 ###########################################################
 #                    Simulation parameters                #
@@ -159,7 +160,7 @@ if(ctrl)
 else
     if(data_from_CSV)
         Δt = 1e-4 # Do not change
-        tend = 2.0
+        tend = 12.0
         if(torque_model == 0)
             folder = joinpath(@__DIR__, "..", "data", "simulation", "Easiest_model", "Outputs")
         elseif(torque_model == 1)
@@ -168,8 +169,10 @@ else
             folder = joinpath(@__DIR__, "..", "data", "Dionysos", "Outputs")
         end
         # Simulate the robot
-        controller! = ZMProbot.dynamixel_controller(rs, tend, Δt, CSV_file, folder; freq=10.0, torque_model=torque_model, write_in_folder=true)
+        controller! = ZMProbot.dynamixel_controller(rs, tend, Δt, CSV_file_two_sided, folder; freq=10.0, torque_model=torque_model, write_in_folder=false)
         ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);
+        println(qs[end][3:6])
+        println(vs[end][3:6])
     else
         tend = 20.0
         # Simulate the robot
