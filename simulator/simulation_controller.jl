@@ -39,8 +39,16 @@ torque_model = 2 # 0 for simples, 1 for basic and 2 for optimal
 filename_read = joinpath(@__DIR__, "..", "data", "WP_validation_200Hz", "Simulations", "Torque_v_om.txt");
 filename_save = joinpath(@__DIR__, "..", "data", "WalkingPattern", "Outputs", "Torque.txt");
 #CSV_file = joinpath(@__DIR__, "..", "data", "WalkingPattern", "Raw", "walkingPattern_ref.csv");
+
+# Asbtract trajectory 
 CSV_file_one_sided = joinpath(@__DIR__, "..", "Dionysos_tests", "Biped_robot", "Dionysos_trajectory_one_sided.csv");
 CSV_file_two_sided = joinpath(@__DIR__, "..", "Dionysos_tests", "Biped_robot", "Dionysos_trajectory_two_sided.csv");
+
+# Pseudo concrete trajectory
+CSV_pseudo_concrete_trajectory = joinpath(@__DIR__, "..", "Dionysos_tests", "Biped_robot", "Dionysos_trajectory_pseudo_concrete_trajectory.csv")
+
+# Concrete trajectory
+CSV_concrete_trajectory = joinpath(@__DIR__, "..", "Dionysos_tests", "Biped_robot", "Dionysos_trajectory_concrete_trajectory.csv")
 
 ###########################################################
 #                    Simulation parameters                #
