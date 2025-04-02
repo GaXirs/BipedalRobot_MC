@@ -13,30 +13,21 @@ using LaTeXStrings
 using DelimitedFiles
 using CSV
 using DataFrames
+using LightXML
 
 ## Include and import the ZMP based controller 
-include(joinpath(@__DIR__, "..", "src", "ZMPBipedRobot.jl"))
-import .ZMPBipedRobot
-
-ZMProbot = ZMPBipedRobot
+include(joinpath(@__DIR__, "RobotSimulator.jl"))
+import .RobotSimulator
 
 ###########################################################
 #                      Code parameters                    #
 ###########################################################
 
 ANIMATE_RESULT = true;
-
-MODEL_2D = true;
-
 write_torques = false;
-
-ctrl = false; # activate ctroller Xing
-
 data_from_CSV = false;
 
-torque_model = 2 # 0 for simples, 1 for basic and 2 for optimal
-
-filename_read = joinpath(@__DIR__, "..", "data", "WP_validation_200Hz", "Outputs", "Torque_v_om.txt");
+filename_read = joinpath(@__DIR__, "..", "data", "WP_validation_200Hz", "Outputs", "Torque.txt");
 filename_save = joinpath(@__DIR__, "..", "data", "WalkingPattern", "Outputs", "Torque.txt");
 #CSV_file = joinpath(@__DIR__, "..", "data", "WalkingPattern", "Raw", "walkingPattern_ref.csv");
 
@@ -51,31 +42,16 @@ CSV_pseudo_concrete_trajectory = joinpath(@__DIR__, "..", "Dionysos_tests", "Bip
 CSV_concrete_trajectory = joinpath(@__DIR__, "..", "Dionysos_tests", "Biped_robot", "Dionysos_trajectory_concrete_trajectory.csv")
 
 ###########################################################
-#                    Simulation parameters                #
+#                         Simulation                      #
 ###########################################################
 
-if MODEL_2D
-    ## Straight path for 2D Robot Model 
-    t = vec(0:100)
-    yPath = 1.18 .+ 0.0 .* t
-    xPath = 0.01 * t
-    θ_0 = 0
-    robot_model = "Robot_CM_no_damping.urdf"
-else
-    ## Circle path for 3D Robot Model 
-    t = vec(100:-1:75)
-    xPath = -0 .- 1.18 * sin.(2 * pi / 100 .* t)
-    yPath = 0 .+ 1.18 * cos.(2 * pi / 100 .* t)
-    θ_0 = 0
-    robot_model = "ZMP_3DBipedRobot.urdf"
-end
-
 # Simulation parameters
+robot_urdf = joinpath(@__DIR__, "..", "deps", "Robot_prismatic.urdf")
 Δt = 1e-4       # Simulation step 
 
 # Construct the robot in the simulation engine 
-rs = ZMProbot.RobotSimulator(;
-    fileName = robot_model,
+rs = RobotSimulator(;
+    fileName = robot_urdf,
     symbolic = false,
     add_contact_points = true,
     add_gravity = true,
@@ -83,112 +59,32 @@ rs = ZMProbot.RobotSimulator(;
 );
 
 # Generate the visualiser
-vis = ZMProbot.set_visulalizer(; mechanism = rs.mechanism)
+vis = set_visulalizer(; mechanism = rs.mechanism, fileName=robot_urdf)
 
-
-# Intiial configuration 
+# Initial configuration 
 boom = [0, 0]
 actuators = [0, 0, 0, 0]
 foot = [0, 0]
-ZMProbot.set_nominal!(rs, vis, boom, actuators, foot)
+set_nominal!(rs, vis, boom, actuators, foot)
 
-if(ctrl)
-    # Position control parameters
-    Kp = 2000.0
-    Ki = 100.0
-    Kd = 100.0
-    if(data_from_CSV)
-        data = CSV.read(CSV_file, DataFrame)
-        # Extract data from the DataFrame
-        tplot = data.time  # Extract the time column
-        q1_l = data.q1_l   # Extract q1_l
-        q1_r = data.q1_r   # Extract q1_r
-        q2_l = data.q2_l   # Extract q2_l
-        q2_r = data.q2_r   # Extract q2_r
-        ZMPx = data.ZMPx   # Extract ZMPx
-        ZMPy = data.ZMPy   # Extract ZMPy
-        CoMx = data.CoMx   # Extract CoMx
-        CoMy = data.CoMy   # Extract CoMy
-        CoMz = data.CoMz   # Extract CoMz
+if(data_from_CSV)
+    Δt = 1e-4 # Do not change
+    tend = 10.799
     
-        # Reconstruct qref, ZMP, and CoM
-        qref = hcat(q1_l, q1_r, q2_l, q2_r)  # Reconstruct qref
-        ZMP = hcat(ZMPx, ZMPy)               # Reconstruct ZMP
-        CoM = hcat(CoMx, CoMy, CoMz)         # Reconstruct CoM
-    else
-
-        ###########################################################
-        #                    ZMP based controller                 #
-        ###########################################################
-        # Construct the biped robot which store the geomtrical propreties and the path wanted 
-        br = ZMProbot.BipedRobot(;
-            readFile = true,
-            URDFfileName = robot_model,
-            paset_visulalizerramFileName = "param.jl",
-        )
-        br.xPath = xPath;
-        br.yPath = yPath;
-        br.initial_position = [xPath[1], yPath[1], θ_0]
-
-        # Construct the Preview Controller
-        pc = ZMProbot.PreviewController(; br = br, check = PLOT_RESULT)
-
-        # Run the Foot Planer Algorithm and get the foot position 
-        fp = ZMProbot.FootPlanner(; br = br, check = PLOT_RESULT)
-
-        # Get the ZMP reference trajectory 
-        zt = ZMProbot.ZMPTrajectory(; br = br, fp = fp, check = PLOT_RESULT)
-
-        # Convert the ZMP reference trajectory into CoM trajectory
-        ct = ZMProbot.CoMTrajectory(; br = br, pc = pc, zt = zt, check = PLOT_RESULT)
-
-        # Get the Swing Foot trajectory 
-        sf = ZMProbot.SwingFootTrajectory(; br = br, fp = fp, zt = zt, check = PLOT_RESULT)
-
-        # Get the joint trajectory from the all path 
-        ik = ZMProbot.InverseKinematics(; br = br, fp = fp, ct = ct, sf = sf, check = PLOT_RESULT)
-
-        # Store into more convienant variables 
-        qr = ik.q_r;
-        ql = ik.q_l;
-        qref = [ql[:, 1] qr[:, 1] ql[:, 2] qr[:, 2]]
-
-        CoM = reduce(hcat, ct.CoM)
-        ZMP = reduce(hcat, zt.ZMP)
-        tplot = reduce(vcat, zt.timeVec)
-    end
-    ###########################################################
-    #                  Simulation environement                #
-    ###########################################################
-    tend = tplot[end]       # Simulation time 
-
+    folder = joinpath(@__DIR__, "..", "Dionysos_tests", "data", "Concrete")
     # Simulate the robot
-    controller! = ZMProbot.trajectory_controller!(rs, tplot, qref, Δt, Kp, Ki, Kd, filename_save, write_torques)
+    controller! = dynamixel_controller(rs, tend, Δt, CSV_concrete_trajectory, folder; freq=10.0, torque_model=torque_model, write_in_folder=true)
     ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);
+    println(qs[end][3:6])
+    println(vs[end][3:6])
 else
-    if(data_from_CSV)
-        Δt = 1e-4 # Do not change
-        tend = 10.799
-        if(torque_model == 0)
-            folder = joinpath(@__DIR__, "..", "data", "simulation", "Easiest_model", "Outputs")
-        elseif(torque_model == 1)
-            folder = joinpath(@__DIR__, "..", "data", "simulation", "Basic_model", "Outputs")
-        else
-            folder = joinpath(@__DIR__, "..", "Dionysos_tests", "data", "Concrete")
-        end
-        # Simulate the robot
-        controller! = ZMProbot.dynamixel_controller(rs, tend, Δt, CSV_concrete_trajectory, folder; freq=10.0, torque_model=torque_model, write_in_folder=true)
-        ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);
-        println(qs[end][3:6])
-        println(vs[end][3:6])
-    else
-        tend = 2.0
-        Δt_file = 0.005
-        # Simulate the robot
-        controller! = ZMProbot.controller_torque_input_file(rs, tend, Δt_file, filename_read)
-        ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);
-    end
+    tend = 2.0
+    Δt_file = 0.005
+    # Simulate the robot
+    controller! = controller_torque_input_file(rs, tend, Δt_file, filename_read)
+    ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);
 end
+
 # Open the visulaiser and run the animation 
 if ANIMATE_RESULT
     open(vis)

@@ -85,7 +85,7 @@ for col in 2:size(low_freq_signal, 2)  # Iterate over each data column
     ma_resampled = resample_signal_closest(ma_filtered, t_high, t_low)
     ema_resampled = resample_signal_closest(ema_filtered, t_high, t_low)
 
-    
+    """
     # Plot the signals: original 10kHz, Moving Average and EMA filtered (downsampled)
     plt = plot(
         t_high, high_freq_signal[:, col], label = "Original High-Frequency Signal (10kHz)",
@@ -100,7 +100,8 @@ for col in 2:size(low_freq_signal, 2)  # Iterate over each data column
     #plot!(t_low, ema_resampled, label = "EMA Filtered (50Hz)", lw = 0.1)  # Finer lines
 
     # Save the figure
-    savefig(plt, joinpath(@__DIR__, "Images", "Filtered_Signals", "signal_comparison_data_$File$col.pdf"))
+    savefig(plt, joinpath(@__DIR__, "Images", "signal_comparison_data_$File$col.pdf"))
+    """
 
     # Plot the signals: Moving Average and Robot data
     plt = plot(
@@ -113,7 +114,7 @@ for col in 2:size(low_freq_signal, 2)  # Iterate over each data column
     plot!(t_low, low_freq_signal[:, col], label = "Robot Output", lw = 2, xlims=(0, 5)) 
 
     # Save the figure
-    savefig(plt, joinpath(@__DIR__, "Images", "Simulation_vs_robot", "signal_simuvsrobot_$File$col.pdf"))
+    savefig(plt, joinpath(@__DIR__, "Images", "signal_simuvsrobot_$File$col.pdf"))
 
 
     # Optionally: Calculate error, NRMSE, and standard deviation of error
@@ -137,6 +138,7 @@ for col in 2:size(low_freq_signal, 2)  # Iterate over each data column
     #println("  EMA Std Error: ", std_error_ema)
     #println("  Mean Error: ", mean_error_ema)
 
+    """
     if File != "Position"
         # Plot the low-frequency signal as a function of the high-frequency signal
         plt1 = plot(
@@ -149,6 +151,7 @@ for col in 2:size(low_freq_signal, 2)  # Iterate over each data column
         plot!(low_freq_signal[1:1001, col], low_freq_signal[1:1001, col], label = "f(x) = x", lw = 2, color = :red)
 
         # Save the robot signal and the interpolated simulation signal figures
-        savefig(plt1, joinpath(@__DIR__, "Images", "Comparison", "signal_comparison_data_$File$col.png"))
+        savefig(plt1, joinpath(@__DIR__, "Images", "signal_comparison_data_$File$col.png"))
     end
+    """
 end
