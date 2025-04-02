@@ -168,16 +168,16 @@ if(ctrl)
 else
     if(data_from_CSV)
         Δt = 1e-4 # Do not change
-        tend = 12.0
+        tend = 10.799
         if(torque_model == 0)
             folder = joinpath(@__DIR__, "..", "data", "simulation", "Easiest_model", "Outputs")
         elseif(torque_model == 1)
             folder = joinpath(@__DIR__, "..", "data", "simulation", "Basic_model", "Outputs")
         else
-            folder = joinpath(@__DIR__, "..", "data", "Dionysos", "Outputs")
+            folder = joinpath(@__DIR__, "..", "Dionysos_tests", "data", "Concrete")
         end
         # Simulate the robot
-        controller! = ZMProbot.dynamixel_controller(rs, tend, Δt, CSV_file_two_sided, folder; freq=10.0, torque_model=torque_model, write_in_folder=false)
+        controller! = ZMProbot.dynamixel_controller(rs, tend, Δt, CSV_concrete_trajectory, folder; freq=10.0, torque_model=torque_model, write_in_folder=true)
         ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);
         println(qs[end][3:6])
         println(vs[end][3:6])
