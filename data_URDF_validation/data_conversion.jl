@@ -32,7 +32,7 @@ fWP = "WalkingPattern"
 #----------------------------------------------------------------------------
 freq = 10.0            # Frequency of measurements
 interval = (0.0,2.0)      # Plot interval
-# [t,HL,KL,HR,KR] (LabView) -> [t,HL,HR,FL,FR] (Code)
+# [t,HL,KL,HR,KR] (LabView) -> [t,HL,HR,KL,KR] (Code)
 # H = Hip, K = Knee, R = Right, L = Left, t = Time
 permutation = [(1,1,1.0),(2,2,1.0), (3,4,1.0),(4,3,-1.0),(5,5,-1.0)]                                                                   
 Δt = 1/freq                # 1/freq

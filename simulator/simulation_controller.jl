@@ -32,11 +32,11 @@ write_torques = false;
 
 ctrl = false; # activate ctroller Xing
 
-data_from_CSV = true;
+data_from_CSV = false;
 
 torque_model = 2 # 0 for simples, 1 for basic and 2 for optimal
 
-filename_read = joinpath(@__DIR__, "..", "data", "WP_validation_200Hz", "Simulations", "Torque_v_om.txt");
+filename_read = joinpath(@__DIR__, "..", "data", "WP_validation_200Hz", "Outputs", "Torque_v_om.txt");
 filename_save = joinpath(@__DIR__, "..", "data", "WalkingPattern", "Outputs", "Torque.txt");
 #CSV_file = joinpath(@__DIR__, "..", "data", "WalkingPattern", "Raw", "walkingPattern_ref.csv");
 
@@ -71,7 +71,7 @@ else
 end
 
 # Simulation parameters
-Δt = 1e-3       # Simulation step 
+Δt = 1e-4       # Simulation step 
 
 # Construct the robot in the simulation engine 
 rs = ZMProbot.RobotSimulator(;
@@ -182,9 +182,10 @@ else
         println(qs[end][3:6])
         println(vs[end][3:6])
     else
-        tend = 20.0
+        tend = 2.0
+        Δt_file = 0.005
         # Simulate the robot
-        controller! = ZMProbot.controller_torque_input_file(rs, tend, Δt, filename_read)
+        controller! = ZMProbot.controller_torque_input_file(rs, tend, Δt_file, filename_read)
         ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);
     end
 end

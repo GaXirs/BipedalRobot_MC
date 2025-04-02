@@ -274,7 +274,7 @@ end
 function controller_torque_input_file(
     rs::RobotSimulator,
     time::Float64,
-    Δt::Float64,
+    Δt_file::Float64,
     filename::String,
 )
     #----------------------------------------------------------------------------
@@ -293,7 +293,8 @@ function controller_torque_input_file(
         ddl = 2 # Non-actuated joints at each side of the actuated joints 
         # The values are only changed at the simulation frequency
         # This is needed since the function simulate of RigidBody dynamic will iterate twice faster as it uses pre-calculation
-        if (t >= sim_index * Δt && t < time)
+
+        if (t >= sim_index * Δt_file && t < time)
             open(filename, "r") do file
                 lines = readlines(file)                          
                 if (sim_index < length(lines))                      
