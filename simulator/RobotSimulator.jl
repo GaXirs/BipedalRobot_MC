@@ -281,10 +281,8 @@ function dynamixel_controller(
     HGR = 353.5           # Hip gear-ratio
     KGR = 212.6           # Knee gear-ratio
     kt  = 3.6103/HGR      # Back-EMF constant ke' [Nm*s/rad] (linked to joint speed)
-    Kv  = 0.22/(HGR*HGR)        # Viscous friction constant [Nm*s/rad] (linked to joint speed)
     ktp  = 0.395/HGR      # Torque constant with respect to the voltage [Nm/V] 
     Kvp  = 1.589/(HGR*HGR)      # Viscous friction constant [Nm*s/rad] (linked to motor speed)
-    τc_i  = 0.128/HGR         # Dry friction torque [Nm]
     τc_u  = 0.065/HGR           # Dry friction torque [Nm]
 
     # Two two first torques are related to the boom and should always be controller to zero
@@ -332,15 +330,9 @@ function dynamixel_controller(
             i .= (u .- (ω .* kt)) ./ R
 
             # Simple torque model : τ = kϕ * i
-            if(torque_model == 0)
-                τ_m .= i.* [HGR, HGR, KGR, KGR] .* kt
-            elseif(torque_model == 1)
-                τ_0 = i .* [HGR, HGR, KGR, KGR] .* kt .- ω .* [HGR, HGR, KGR, KGR] .* Kv
-                τ_m .= τ_0 .- sign.(ω) .* [HGR, HGR, KGR, KGR] .* τc_i
-            else
-                τ_0 = u .* [HGR, HGR, KGR, KGR] .* ktp  .- ω .* [HGR, HGR, KGR, KGR] .* Kvp
-                τ_m .= τ_0 .- sign.(ω) .* [HGR, HGR, KGR, KGR] .* τc_u
-            end
+            
+            τ_0 = u .* [HGR, HGR, KGR, KGR] .* ktp  .- ω .* [HGR, HGR, KGR, KGR] .* Kvp
+            τ_m .= τ_0 .- sign.(ω) .* [HGR, HGR, KGR, KGR] .* τc_u
             temp_τ[(end - 3 - ddl):(end - ddl)] .= τ_m
 
             if(write_in_folder)

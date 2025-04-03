@@ -120,62 +120,7 @@ end
 # Models: friction less, basic model and optimised model
 #-----------------------------------------------------------------------------------------------------------------
 
-function to_current_basic_model(U::Vector{Float64}, q̇ ::Vector{Float64}):: Vector{Float64}
-    """
-    Takes voltage and velocity as inputs and returns the current
-    Uses the model i = (U - ω kϕ)/R , ω = q̇ GR  
-    """
-    # Motor Caracteristics: S. Deligne 
-    R   = 9.3756      # Armature resistance [Ω]
-    HGR = 353.5       # Hip gear-ratio
-    KGR = 212.6       # Knee gear-ratio
-    kϕ  = 3.6103/HGR  # Back-EMF constant ke' [Nm*s/rad] (linked to joint speed)
-    # Simple motor model : U = R*i + kϕ ω -> i = (U - kϕ ω)/R
-    ω = q̇[2:end] .* [HGR, HGR, KGR, KGR] # ω = ̇q * GR
-    i = (U[2:end] .- (ω .* kϕ)) ./ R
-
-    return append!([U[1]],i)
-end
-
-function to_torque_frictionless_model(current::Vector{Float64}, q̇::Vector{Float64}):: Vector{Float64}
-    """
-    Takes current and velocity (does not serves but is recquired to fit the format)
-    as inputs and returns the torque.
-    Uses the model τ = kϕ i
-    """
-    # Motor Caracteristics: S. Deligne
-    HGR = 353.5         # Hip gear-ratio
-    KGR = 212.6         # Knee gear-ratio
-    kt  = 3.6103/HGR    # Back-EMF constant ke' [Nm*s/rad] (linked to joint speed) 
-
-    # Frictionless motor model : τ = kϕ*i
-    τ = current[2:end].* [HGR, HGR, KGR, KGR] .* kt
-    
-    return append!([current[1]],τ)
-end
-
-function to_torque_basic_model(current::Vector{Float64}, q̇::Vector{Float64}):: Vector{Float64}
-    """
-    Takes current and velocity as inputs and returns the torque
-    Uses the model τ = kϕ i - τc - Kv ω
-    """
-    # Motor Caracteristics: S. Deligne
-    HGR = 353.5         # Hip gear-ratio
-    KGR = 212.6         # Knee gear-ratio
-    Kv  = 0.22/(HGR*HGR)      # Viscous friction constant [Nm*s/rad] (linked to joint speed)
-    τc  = 0.128/HGR         # Dry friction torque [Nm]
-    kt  = 3.6103/HGR    # Back-EMF constant ke' [Nm*s/rad] (linked to joint speed) 
-
-    # Simple motor model : τ = kϕ*i - τc - Kv ω
-    ω = q̇[2:end] .* [HGR, HGR, KGR, KGR]
-    τ_0 = current[2:end].* [HGR, HGR, KGR, KGR] .* kt .- ω .* [HGR, HGR, KGR, KGR] .* Kv # τ = kϕ i - kv ω
-    # τ = ifelse.(τ_0 .> 0, max.(τ_0 .- τc, 0.0), min.(τ_0 .+ τc, 0.0)) # τ = kϕ i - kv ω - τc (static model)
-    τ = τ_0 .- sign.(ω) .* [HGR, HGR, KGR, KGR] .* τc
-
-    return append!([current[1]],τ)
-end
-
-function to_torque_optimised_model(U::Vector{Float64}, q̇::Vector{Float64}):: Vector{Float64}
+function to_torque_model(U::Vector{Float64}, q̇::Vector{Float64}):: Vector{Float64}
     """
     Takes voltage and velocity as inputs and returns the torque
     Uses the model τ = kt' U - (τc + Kv'q̇)

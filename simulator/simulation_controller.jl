@@ -27,7 +27,7 @@ ANIMATE_RESULT = true;
 write_torques = false;
 data_from_CSV = false;
 
-filename_read = joinpath(@__DIR__, "..", "data", "WP_validation_200Hz", "Outputs", "Torque.txt");
+filename_read = joinpath(@__DIR__, "..", "data", "simulation", "No_damping", "Outputs", "Torque.txt");
 filename_save = joinpath(@__DIR__, "..", "data", "WalkingPattern", "Outputs", "Torque.txt");
 #CSV_file = joinpath(@__DIR__, "..", "data", "WalkingPattern", "Raw", "walkingPattern_ref.csv");
 
@@ -79,7 +79,7 @@ if(data_from_CSV)
     println(vs[end][3:6])
 else
     tend = 2.0
-    Δt_file = 0.005
+    Δt_file = 0.0001
     # Simulate the robot
     controller! = controller_torque_input_file(rs, tend, Δt_file, filename_read)
     ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);
