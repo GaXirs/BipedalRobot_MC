@@ -27,9 +27,9 @@ ANIMATE_RESULT = true;
 write_torques = false;
 data_from_CSV = false;
 
-filename_read = joinpath(@__DIR__, "..", "data", "simulation", "No_damping", "Outputs", "Torque.txt");
+filename_read = joinpath(@__DIR__, "..", "data", "simulation", "Torque.txt");
 filename_save = joinpath(@__DIR__, "..", "data", "WalkingPattern", "Outputs", "Torque.txt");
-#CSV_file = joinpath(@__DIR__, "..", "data", "WalkingPattern", "Raw", "walkingPattern_ref.csv");
+CSV_file_ZMP = joinpath(@__DIR__, "..", "data", "WalkingPattern", "walkingPattern_ref.csv");
 
 # Asbtract trajectory 
 CSV_file_one_sided = joinpath(@__DIR__, "..", "Dionysos_tests", "Biped_robot", "Dionysos_trajectory_one_sided.csv");
@@ -46,7 +46,7 @@ CSV_concrete_trajectory = joinpath(@__DIR__, "..", "Dionysos_tests", "Biped_robo
 ###########################################################
 
 # Simulation parameters
-robot_urdf = joinpath(@__DIR__, "..", "deps", "Robot_prismatic.urdf")
+robot_urdf = joinpath(@__DIR__, "..", "deps", "Robot_hybrid.urdf")
 Δt = 1e-4       # Simulation step 
 
 # Construct the robot in the simulation engine 
@@ -69,17 +69,17 @@ set_nominal!(rs, vis, boom, actuators, foot)
 
 if(data_from_CSV)
     Δt = 1e-4 # Do not change
-    tend = 10.799
+    tend = 20.0
     
-    folder = joinpath(@__DIR__, "..", "Dionysos_tests", "data", "Concrete")
+    folder = joinpath(@__DIR__, "..", "data", "simulation", "Revolute", "Outputs")
     # Simulate the robot
-    controller! = dynamixel_controller(rs, tend, Δt, CSV_concrete_trajectory, folder; freq=10.0, torque_model=torque_model, write_in_folder=true)
+    controller! = dynamixel_controller(rs, tend, Δt, CSV_file_ZMP, folder; freq=50.0, write_in_folder=true)
     ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);
     println(qs[end][3:6])
     println(vs[end][3:6])
 else
     tend = 2.0
-    Δt_file = 0.0001
+    Δt_file = 0.02
     # Simulate the robot
     controller! = controller_torque_input_file(rs, tend, Δt_file, filename_read)
     ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);

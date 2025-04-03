@@ -5,8 +5,8 @@ using Statistics
 File = "Voltage"
 data = ["", "Left Hip", "Right Hip", "Left Knee", "Right Knee"]
 
-Robot_signal = joinpath(@__DIR__,"..","data","WP_validation_200Hz", "Outputs", File * ".txt")
-Simulation_signal = joinpath(@__DIR__,"..","data","simulation", "No_damping", "Outputs", File * ".txt")
+Robot_signal = joinpath(@__DIR__,"..","data","WP_validation", "Inputs", File * ".txt")
+Simulation_signal = joinpath(@__DIR__,"..","data","simulation", "Revolute", "Outputs", File * ".txt")
 
 # Load the signals from the text files
 low_freq_signal = readdlm(Robot_signal)  # 50Hz signal
@@ -18,7 +18,7 @@ end
 
 
 # Define parameters of the signals
-low_freq_sampling_rate = 200   # Sampling rate of the low-frequency signal (Hz)
+low_freq_sampling_rate = 50   # Sampling rate of the low-frequency signal (Hz)
 high_freq_sampling_rate = 10000  # Sampling rate of the high-frequency signal (Hz)
 duration = 20  # Duration of the signals (seconds)
 
@@ -72,11 +72,20 @@ function resample_signal_closest(signal, t_original, t_target)
     return resampled_signal
 end
 
+if(File == "Voltage")
+    to_save = deepcopy(low_freq_signal)
+end
+
 # Iterate over each data column
 for col in 2:size(low_freq_signal, 2)  # Iterate over each data column
 
     # Apply Moving Average manually
     ma_filtered = moving_average(high_freq_signal[:, col], ma_window_size)
+
+    if(File == "Voltage")
+        ma_torque = moving_average(low_freq_signal[:,col],15)
+        to_save[:,col] = ma_torque
+    end
 
     # Apply Exponential Moving Average
     ema_filtered = exponential_moving_average(high_freq_signal[:, col], alpha)
@@ -111,7 +120,11 @@ for col in 2:size(low_freq_signal, 2)  # Iterate over each data column
         xlims=(0, 5) 
     )
     
-    plot!(t_low, low_freq_signal[:, col], label = "Robot Output", lw = 2, xlims=(0, 5)) 
+    if(File == "Voltage")
+        plot!(t_low, ma_torque, label = "Robot Output", lw = 2, xlims=(0, 5)) 
+    else
+        plot!(t_low, low_freq_signal[:, col], label = "Robot Output", lw = 2, xlims=(0, 5)) 
+    end
 
     # Save the figure
     savefig(plt, joinpath(@__DIR__, "Images", "signal_simuvsrobot_$File$col.pdf"))
@@ -154,4 +167,8 @@ for col in 2:size(low_freq_signal, 2)  # Iterate over each data column
         savefig(plt1, joinpath(@__DIR__, "Images", "signal_comparison_data_$File$col.png"))
     end
     """
+end
+
+if(File == "Voltage")
+    writedlm("processed_signal.txt", to_save, ' ')
 end

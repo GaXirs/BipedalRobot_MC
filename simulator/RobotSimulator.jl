@@ -235,7 +235,6 @@ function dynamixel_controller(
     filename::String,
     folder_save::String;
     freq::Float64 = 50.0,
-    torque_model::Int64 = 3,
     write_in_folder::Bool = false,
 )
     if(write_in_folder)

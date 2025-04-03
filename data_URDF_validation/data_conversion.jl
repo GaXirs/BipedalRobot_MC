@@ -125,27 +125,8 @@ if(FWP)
 end
 #----------------------------------------------------------------------------
 
-"""
+
 simu_torque = joinpath(@__DIR__, "..", "data", "simulation", "Torque.txt")
-velocity = joinpath(@__DIR__, "..", "data", "simulation", "No_damping", "Outputs", "Velocity.txt")
-voltage = joinpath(@__DIR__, "..", "data", "simulation", "No_damping", "Outputs", "Voltage.txt")
-compute_model(voltage, velocity, simu_torque, to_torque_model)
-
-simu_signal = readdlm(simu_torque)
-robot_signal = readdlm(joinpath(@__DIR__, "..", "data", "simulation", "No_damping", "Outputs", "Torque.txt"))
-
-for col in 2:size(simu_signal, 2)  # Iterate over each data column
-   # Plot the signals: Moving Average and Robot data
-   plt = plot(
-      simu_signal[:, 1], simu_signal[:, col], label = "Moving Averaged Simulation",
-       xlabel = "Time (s)", ylabel = File,
-       title = data[col] * " $File Comparison", lw = 2,
-       xlims=(0, 5) 
-   )
-   
-   plot!(robot_signal[:, 1], robot_signal[:, col], label = "Robot Output", lw = 2, xlims=(0, 5)) 
-
-   # Save the figure
-   savefig(plt, joinpath(@__DIR__, "Images", "signal_simuvsrobot_$File$col.pdf"))
-end
-"""
+speed = joinpath(@__DIR__, "..", "data", "WP_validation_200Hz", "Inputs", "Velocity.txt")
+voltage = joinpath(@__DIR__, "..", "data", "WP_validation_200Hz", "Inputs", "Voltage.txt")
+compute_model(voltage, speed, simu_torque, to_torque_model)
