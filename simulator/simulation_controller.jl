@@ -24,8 +24,8 @@ import .RobotSimulator
 ###########################################################
 
 ANIMATE_RESULT = true;
-write_torques = false;
-data_from_CSV = false;
+write_torques = true;
+data_from_CSV = true;
 
 filename_read = joinpath(@__DIR__, "..", "data", "simulation", "Torque.txt");
 filename_save = joinpath(@__DIR__, "..", "data", "WalkingPattern", "Outputs", "Torque.txt");
@@ -46,7 +46,7 @@ CSV_concrete_trajectory = joinpath(@__DIR__, "..", "Dionysos_tests", "Biped_robo
 ###########################################################
 
 # Simulation parameters
-robot_urdf = joinpath(@__DIR__, "..", "deps", "Robot_hybrid.urdf")
+robot_urdf = joinpath(@__DIR__, "..", "deps", "Robot_prismatic.urdf")
 Δt = 1e-4       # Simulation step 
 
 # Construct the robot in the simulation engine 
@@ -71,14 +71,14 @@ if(data_from_CSV)
     Δt = 1e-4 # Do not change
     tend = 20.0
     
-    folder = joinpath(@__DIR__, "..", "data", "simulation", "Revolute", "Outputs")
+    folder = joinpath(@__DIR__, "..", "data", "simulation", "Prismatic")
     # Simulate the robot
     controller! = dynamixel_controller(rs, tend, Δt, CSV_file_ZMP, folder; freq=50.0, write_in_folder=true)
     ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);
     println(qs[end][3:6])
     println(vs[end][3:6])
 else
-    tend = 2.0
+    tend = 20.0
     Δt_file = 0.02
     # Simulate the robot
     controller! = controller_torque_input_file(rs, tend, Δt_file, filename_read)
