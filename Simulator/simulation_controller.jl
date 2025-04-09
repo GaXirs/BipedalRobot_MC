@@ -20,34 +20,49 @@ include(joinpath(@__DIR__, "RobotSimulator.jl"))
 import .RobotSimulator
 
 ###########################################################
+#                      Walking Pattern                    #
+###########################################################
+
+#ZMP
+CSV_ZMP = joinpath(@__DIR__, "..", "WalkingPatterns", "walkingPattern_ref.csv");
+
+# Asbtract trajectory 
+CSV_one_sided = joinpath(@__DIR__, "..", "WalkingPatterns", "Dionysos_trajectory_one_sided.csv");
+CSV_two_sided = joinpath(@__DIR__, "..", "WalkingPatterns", "Dionysos_trajectory_two_sided.csv");
+
+# Pseudo concrete trajectory
+CSV_pseudo_concrete_trajectory = joinpath(@__DIR__, "..", "WalkingPatterns", "Dionysos_trajectory_pseudo_concrete_trajectory.csv")
+
+# Concrete trajectory
+CSV_concrete_trajectory = joinpath(@__DIR__, "..", "WalkingPatterns", "Dionysos_trajectory_concrete_trajectory.csv")
+
+###########################################################
 #                      Code parameters                    #
 ###########################################################
 
 ANIMATE_RESULT = true;
-write_torques = true;
-data_from_CSV = true;
+data_from_WP = false;
+write_output = false; # only used when data_from_CSV = true
 
-filename_read = joinpath(@__DIR__, "..", "data", "simulation", "Torque.txt");
-filename_save = joinpath(@__DIR__, "..", "data", "WalkingPattern", "Outputs", "Torque.txt");
-CSV_file_ZMP = joinpath(@__DIR__, "..", "data", "WalkingPattern", "walkingPattern_ref.csv");
+freq = 50.0; # frequency of the CSV or the txt to read
+tend = 20.0; # end time of the simulation
 
-# Asbtract trajectory 
-CSV_file_one_sided = joinpath(@__DIR__, "..", "Dionysos_tests", "Biped_robot", "Dionysos_trajectory_one_sided.csv");
-CSV_file_two_sided = joinpath(@__DIR__, "..", "Dionysos_tests", "Biped_robot", "Dionysos_trajectory_two_sided.csv");
+# For data_from_WP = false
+filename_read = joinpath(@__DIR__, "..", "data", "Robot_50Hz", "Simulations", "Torque.txt");
 
-# Pseudo concrete trajectory
-CSV_pseudo_concrete_trajectory = joinpath(@__DIR__, "..", "Dionysos_tests", "Biped_robot", "Dionysos_trajectory_pseudo_concrete_trajectory.csv")
+#For data_from_WP = true
+WP_to_play = CSV_ZMP;
+folder_save = joinpath(@__DIR__, "..", "data", "simulation", "Prismatic")
 
-# Concrete trajectory
-CSV_concrete_trajectory = joinpath(@__DIR__, "..", "Dionysos_tests", "Biped_robot", "Dionysos_trajectory_concrete_trajectory.csv")
+# URDF to used
+# Simulation parameters
+robot_urdf = joinpath(@__DIR__, "..", "deps", "Robot_prismatic.urdf")
 
 ###########################################################
 #                         Simulation                      #
 ###########################################################
 
-# Simulation parameters
-robot_urdf = joinpath(@__DIR__, "..", "deps", "Robot_prismatic.urdf")
-Δt = 1e-4       # Simulation step 
+Δt = 1e-4 # Do not change
 
 # Construct the robot in the simulation engine 
 rs = RobotSimulator(;
@@ -67,19 +82,14 @@ actuators = [0, 0, 0, 0]
 foot = [0, 0]
 set_nominal!(rs, vis, boom, actuators, foot)
 
-if(data_from_CSV)
-    Δt = 1e-4 # Do not change
-    tend = 20.0
-    
-    folder = joinpath(@__DIR__, "..", "data", "simulation", "Prismatic")
+if(data_from_WP)
     # Simulate the robot
-    controller! = dynamixel_controller(rs, tend, Δt, CSV_file_ZMP, folder; freq=50.0, write_in_folder=true)
+    controller! = dynamixel_controller(rs, tend, Δt, WP_to_play, folder_save; freq=freq, write_in_folder=write_output)
     ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);
     println(qs[end][3:6])
     println(vs[end][3:6])
 else
-    tend = 20.0
-    Δt_file = 0.02
+    Δt_file = 1/freq
     # Simulate the robot
     controller! = controller_torque_input_file(rs, tend, Δt_file, filename_read)
     ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);
