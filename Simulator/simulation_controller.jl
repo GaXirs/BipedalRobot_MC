@@ -24,7 +24,7 @@ import .RobotSimulator
 ###########################################################
 
 #ZMP
-CSV_ZMP = joinpath(@__DIR__, "..", "WalkingPatterns", "walkingPattern_ref.csv");
+CSV_ZMP = joinpath(@__DIR__, "..", "WalkingPatterns", "ZMP.csv");
 
 # Asbtract trajectory 
 CSV_one_sided = joinpath(@__DIR__, "..", "WalkingPatterns", "Dionysos_trajectory_one_sided.csv");
@@ -41,7 +41,7 @@ CSV_concrete_trajectory = joinpath(@__DIR__, "..", "WalkingPatterns", "Dionysos_
 ###########################################################
 
 ANIMATE_RESULT = true;
-data_from_WP = false;
+data_from_WP = true;
 write_output = false; # only used when data_from_CSV = true
 
 freq = 50.0; # frequency of the CSV or the txt to read
@@ -85,14 +85,16 @@ set_nominal!(rs, vis, boom, actuators, foot)
 if(data_from_WP)
     # Simulate the robot
     controller! = dynamixel_controller(rs, tend, Δt, WP_to_play, folder_save; freq=freq, write_in_folder=write_output)
-    ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);
-    println(qs[end][3:6])
-    println(vs[end][3:6])
+    @time begin
+        ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);
+    end
 else
     Δt_file = 1/freq
     # Simulate the robot
     controller! = controller_torque_input_file(rs, tend, Δt_file, filename_read)
-    ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);
+    @time begin
+        ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);
+    end
 end
 
 # Open the visulaiser and run the animation 

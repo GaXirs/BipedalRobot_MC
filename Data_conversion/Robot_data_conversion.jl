@@ -8,10 +8,10 @@ include("utils_conversion.jl")
 #----------------------------------------------------------------------------
 
 F1 = false
-f1 = "WP_validation"
+f1 = "Robot_50Hz"
 
-F2 = false
-f2 = "WP_validation_200Hz"
+F2 = true
+f2 = "Robot_200Hz"
 
 #----------------------------------------------------------------------------
 #                       FILE DETAILS
@@ -26,7 +26,8 @@ interval = (0.0,2.0)      # Plot interval
 permutation = [(1,1,1.0),(2,2,1.0), (3,4,1.0),(4,3,-1.0),(5,5,-1.0)]  
 
 Δt = 1/freq                # 1/freq
-extension_factor = int(goalfreq/freq)   # Padding between two values
+extension_factor = Int64(div(goalfreq, freq))  # This will give you 2 as an Int64
+# Padding between two values
 max_lines = 20001       # Limit the number of lines after padding
 remove_temp_file = true # removes non permutated files
 #----------------------------------------------------------------------------
@@ -82,8 +83,5 @@ if(F1)
 end
 if(F2)
    folder_full_process(f2)
-end
-if(F3)
-   folder_full_process(f3)
 end
 #----------------------------------------------------------------------------
