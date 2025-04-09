@@ -8,38 +8,31 @@ include("utils_conversion.jl")
 #----------------------------------------------------------------------------
 
 F1 = false
-f1 = "WP_straightline_intheair"
+f1 = "WP_validation"
 
 F2 = false
-f2 = "WP_validation"
-
-F3 = false
-f3 = "WP_validation_200Hz"
-
-FSimu = false
-
-FDionysos = false
-fSD = "Dionysos"
-
-FWP = false
-fWP = "WalkingPattern"
+f2 = "WP_validation_200Hz"
 
 #----------------------------------------------------------------------------
 #                       FILE DETAILS
 #----------------------------------------------------------------------------
 freq = 200.0            # Frequency of measurements
+goalfreq = 1e3          # Goal frequency after padding /!\ has to be a mulitple of freq
+
 interval = (0.0,2.0)      # Plot interval
+
 # [t,HL,KL,HR,KR] (LabView) -> [t,HL,HR,KL,KR] (Code)
 # H = Hip, K = Knee, R = Right, L = Left, t = Time
-permutation = [(1,1,1.0),(2,2,1.0), (3,4,1.0),(4,3,-1.0),(5,5,-1.0)]                                                                   
+permutation = [(1,1,1.0),(2,2,1.0), (3,4,1.0),(4,3,-1.0),(5,5,-1.0)]  
+
 Δt = 1/freq                # 1/freq
-extension_factor = 5   # Padding between two values
+extension_factor = int(goalfreq/freq)   # Padding between two values
 max_lines = 20001       # Limit the number of lines after padding
 remove_temp_file = true # removes non permutated files
 #----------------------------------------------------------------------------
 
 #----------------------------------------------------------------------------
-# Folder processers
+# Folder process frunction
 #----------------------------------------------------------------------------
 function folder_full_process(folder_name::String)
 
@@ -78,15 +71,6 @@ function folder_full_process(folder_name::String)
 
  # Post-processing  
     extend_data(out_torque_v_om, simu_torque_v_om, Δt, extension_factor; max_lines = max_lines) 
-
-    plot_path = joinpath(path, "Images")
-    plot_data(in_position, plot_path, "Position"         ,interval)
-    plot_data(in_velocity, plot_path, "Velocity"         ,interval)
-    plot_data(in_voltage , plot_path, "Voltage"          ,interval)
-
-    plot_data(out_torque_v_om, plot_path, "Torque"  ,interval)
-    plot_data(simu_torque_v_om, plot_path, "Extended_torque", interval)
-
 end
 #----------------------------------------------------------------------------
 
@@ -102,31 +86,4 @@ end
 if(F3)
    folder_full_process(f3)
 end
-
-if(FSimu)
-   path = joinpath(@__DIR__, "..", "data", "simulation")
-   plot_data(joinpath(path, "Outputs", "Torque.txt"), joinpath(path, "Images"), "Torque", interval)
-   plot_data(joinpath(path, "Outputs", "Velocity.txt"), joinpath(path, "Images"), "Velocity", interval)
-   plot_data(joinpath(path, "Outputs", "Voltage.txt"), joinpath(path, "Images"), "Voltage", interval)
-   plot_data(joinpath(path, "Outputs", "Position.txt"), joinpath(path, "Images"), "Position", interval)
-end
-
-if(FDionysos)
-   path = joinpath(@__DIR__, "..", "data", fSD)
-   plot_data(joinpath(path, "Outputs", "Torque.txt"), joinpath(path, "Images"), "Torque", interval)
-   plot_data(joinpath(path, "Outputs", "Velocity.txt"), joinpath(path, "Images"), "Velocity", interval)
-   plot_data(joinpath(path, "Outputs", "Voltage.txt"), joinpath(path, "Images"), "Voltage", interval)
-   plot_data(joinpath(path, "Outputs", "Position.txt"), joinpath(path, "Images"), "Position", interval)
-end
-
-if(FWP)
-   path = joinpath(@__DIR__, "..", "data", fWP)
-   plot_data(joinpath(path, "Outputs", "Torque.txt"), joinpath(path, "Images"), "Torques_Xing", interval)
-end
 #----------------------------------------------------------------------------
-
-
-simu_torque = joinpath(@__DIR__, "..", "data", "simulation", "Torque.txt")
-speed = joinpath(@__DIR__, "..", "data", "WP_validation_200Hz", "Inputs", "Velocity.txt")
-voltage = joinpath(@__DIR__, "..", "data", "WP_validation_200Hz", "Inputs", "Voltage.txt")
-compute_model(voltage, speed, simu_torque, to_torque_model)
