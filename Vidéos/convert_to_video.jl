@@ -1,6 +1,6 @@
 using MeshCat
 
-filename = "First_Walk"
+filename = "ZMP"
 TAR_path = joinpath(@__DIR__, "Tar", filename)
 MP4_path = joinpath(@__DIR__, "anim", filename)
 
