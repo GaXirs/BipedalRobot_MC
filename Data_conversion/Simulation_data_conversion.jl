@@ -5,10 +5,10 @@ using Statistics
 #----------------------------------------------------------------------------
 #                       Code PARAMETERS
 #----------------------------------------------------------------------------
-File = "Position" # Position, Velocity, Voltage, Torque, Current
-URDF = "Hybrid"
+File = "Voltage" # Position, Velocity, Voltage, Torque, Current
+URDF = "Prismatic" # Prismatic, Hybrid
 file_frequency  = 10000  # Sampling rate of the high-frequency signal (Hz)
-goal_frequency = 50   # Sampling rate of the low-frequency signal (Hz) /!\ has to be a divider of file_frequency
+goal_frequency = 200   # Sampling rate of the low-frequency signal (Hz) /!\ has to be a divider of file_frequency
 duration = 20  # Duration of the signals (seconds)
 
 Simulation_signal = joinpath(@__DIR__,"..","data","simulation", URDF, File * ".txt")
@@ -20,7 +20,7 @@ save_folder = joinpath(@__DIR__, "..", "data", "simulation", URDF, "moving_avera
 data = ["", "Left Hip", "Right Hip", "Left Knee", "Right Knee"]
 
 if(File == "Position")
-    high_freq_signal = readdlm(Simulation_signal) .* (180 / π)  # 10kHz signal
+    high_freq_signal = readdlm(Simulation_signal)  # 10kHz signal
 else
     high_freq_signal = readdlm(Simulation_signal)  # 10kHz signal
 end
@@ -66,11 +66,28 @@ function resample_signal_closest(signal, t_original, t_target)
 end
 
 #----------------------------------------------------------------------------
+#                       ANALYSIS FUNCTION
+#----------------------------------------------------------------------------
+
+function calculate_me(reference::Vector{}, predicted::Vector{})
+    me = mean(reference .- predicted)
+    return me
+end
+
+function calculate_rmse(reference::Vector{}, predicted::Vector{})
+    mse = mean((reference .- predicted).^2)
+    rmse =  sqrt(mse)
+    return rmse
+end
+
+#----------------------------------------------------------------------------
 #                       CODE
 #----------------------------------------------------------------------------
 
 to_save = zeros(duration*goal_frequency+1,size(high_freq_signal,2))
 to_save[:,1] = t_low
+
+ref_signal = readdlm(joinpath(@__DIR__, "..", "data", "Robot_200Hz", "Inputs", File * ".txt"))
 
 # Iterate over each data column
 for col in 2:size(high_freq_signal, 2)  # Iterate over each data column
@@ -87,11 +104,21 @@ for col in 2:size(high_freq_signal, 2)  # Iterate over each data column
     plt = plot(t_high, high_freq_signal[:,col], label = "Simulation signal", lw = 2, xlims=(0, 5))
     plot!(t_low, ma_resampled, label = "Simulation resampled", lw = 2, xlims=(0, 5)) 
 
+    name = data[col]
+    #mean_error = calculate_me(ref_signal[:,col], ma_resampled)    
+    #RMSE = calculate_rmse(ref_signal[:,col], ma_resampled) 
+    #println("Mean error on $File $name : $mean_error")
+    #println("RMSE on $File $name : $RMSE")
+    max = maximum(ref_signal[:,col])
+    min = minimum(ref_signal[:,col])
+    println("$max, $min, $(max-min)")
+
+    println()
+
     if(false)
         # Save the figure to verify moving average
-        name = data[col]
         savefig(plt, joinpath(@__DIR__, "signal_simuvsrobot_$File$name.pdf"))
     end
 end
 
-writedlm(save_folder, to_save, ' ')
+#writedlm(save_folder, to_save, ' ')
