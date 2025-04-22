@@ -48,11 +48,11 @@ for i in range(len(columns_names)-1):
     plt.xlim(0, 5) # 5s plots
 
     # Plot data
-    plt.plot(data_simu_p[:,0], data_simu_p[:,i+1], label = 'Simulation prismatic')
-    plt.plot(data_simu_h[:,0], data_simu_h[:,i+1], label = 'Simulation hybrid', color='purple', linestyle = ":")
-    plt.plot(data_robot[:,0], data_robot[:,i+1], label = 'Robot')
+    plt.plot(data_robot[:,0], data_robot[:,i+1], label = 'Robot', color='black', linewidth=1.5)
+    plt.plot(data_simu_p[:,0], data_simu_p[:,i+1], label = 'Simulation prismatic', color='tab:green', linestyle='-', linewidth=1.5)
+    plt.plot(data_simu_h[:,0], data_simu_h[:,i+1], label = 'Simulation hybrid', color='tab:orange', linestyle='--', linewidth=1.5)
     if(File == "Position"):
-        plt.plot(data_WP[:,0], data_WP[:,i+1], label = 'WalkingPattern (q_ref)')
+        plt.plot(data_WP[:,0], data_WP[:,i+1], label = 'WalkingPattern (q_ref)', color='tab:red', linestyle=':', linewidth=1.5)
     plt.legend()
     if(verbose):
         plt.show()
