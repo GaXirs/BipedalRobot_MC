@@ -41,14 +41,14 @@ CSV_concrete_trajectory = joinpath(@__DIR__, "..", "WalkingPatterns", "Dionysos_
 ###########################################################
 
 ANIMATE_RESULT = true;
-data_from_WP = true;
+data_from_WP = false;
 write_output = false; # only used when data_from_WP = true. Note: increases the computational time like hell
 
-freq = 50.0; # frequency of the CSV or the txt to read
-tend = 20.0; # end time of the simulation
+freq = 200.0; # frequency of the CSV or the txt to read
+tend = 5.0; # end time of the simulation
 
 # For data_from_WP = false
-filename_read = joinpath(@__DIR__, "..", "data", "Robot_50Hz", "Simulations", "Torque.txt");
+filename_read = joinpath(@__DIR__, "..", "data", "Robot_200Hz", "Inputs", "Voltage.txt");
 
 #For data_from_WP = true
 WP_to_play = CSV_ZMP;
@@ -91,7 +91,7 @@ if(data_from_WP)
 else
     Δt_file = 1/freq
     # Simulate the robot
-    controller! = controller_torque_input_file(rs, tend, Δt_file, filename_read)
+    controller! = controller_voltage_input_file(rs, tend, Δt_file, filename_read)
     @time begin
         ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);
     end

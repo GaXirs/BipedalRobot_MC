@@ -186,7 +186,7 @@ function update_visulizer!(rs::RobotSimulator, vis::MechanismVisualizer)
 end
 
 
-function controller_torque_input_file(
+function controller_voltage_input_file(
     rs::RobotSimulator,
     time::Float64,
     Δt_file::Float64,
@@ -198,11 +198,20 @@ function controller_torque_input_file(
     state = rs.state
     sim_index = 0
 
+    #----------------------------------------------------------------------------
+    #                          Motor characteristics
+    #----------------------------------------------------------------------------
+    HGR = 353.5           # Hip gear-ratio
+    KGR = 212.6           # Knee gear-ratio
+    ktp  = 0.395/HGR      # Torque constant with respect to the voltage [Nm/V] 
+    Kvp  = 1.589/(HGR*HGR)      # Viscous friction constant [Nm*s/rad] (linked to motor speed)
+    τc_u  = 0.065/HGR           # Dry friction torque [Nm]
+
     # Two two first torques are related to the boom and should always be controller to zero
     # The two last torques are related to the feet and should also be controlled to zero
     # The only torques changed by the controller are the four in the middle (Left hip, right hip, left knee, right knee)
     temp_τ = [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
-
+    temp_u = [0.0,0.0,0.0,0.0]
 
     function controller!(τ, t, state)
         ddl = 2 # Non-actuated joints at each side of the actuated joints 
@@ -211,17 +220,21 @@ function controller_torque_input_file(
 
         if (t >= sim_index * Δt_file && t < time)
             open(filename, "r") do file
-                lines = readlines(file)                          
-                if (sim_index < length(lines))                      
-                    line = split(lines[sim_index+1] , " ")
-                    # Line = time τ_LH τ_RH τ_LK τ_RK
-                    # We only change the torques of the hips and the knees                                 
-                    temp_τ[(end - 3 - ddl):(end - ddl)] .= parse.(Float64, line[2:end])                                         
-                end
+                lines = readlines(file)                                         
+                line = split(lines[sim_index+1] , " ")
+                # Line = time τ_LH τ_RH τ_LK τ_RK
+                # We only change the torques of the hips and the knees                                 
+                temp_u .= parse.(Float64, line[2:end])                                         
             end
             sim_index += 1
         end
         # τ needs to be [0 0 τ_LH τ_RH τ_LK τ_RK 0 0]
+        current_̇q = velocity(state)[(end - 3 - ddl):(end - ddl)]
+        ω = current_̇q .* [HGR, HGR, KGR, KGR]
+
+        τ_0 = temp_u .* [HGR, HGR, KGR, KGR] .* ktp  .- ω .* [HGR, HGR, KGR, KGR] .* Kvp
+        τ_m = τ_0 .- sign.(ω) .* [HGR, HGR, KGR, KGR] .* τc_u
+        temp_τ[(end - 3 - ddl):(end - ddl)] .= τ_m
         τ .= temp_τ
 
         return nothing
