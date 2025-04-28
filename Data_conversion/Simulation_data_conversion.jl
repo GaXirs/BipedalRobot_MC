@@ -6,7 +6,7 @@ using Statistics
 #                       Code PARAMETERS
 #----------------------------------------------------------------------------
 File = "Voltage" # Position, Velocity, Voltage, Torque, Current
-URDF = "Prismatic" # Prismatic, Hybrid
+URDF = "Hybrid" # Prismatic, Hybrid
 file_frequency  = 10000  # Sampling rate of the high-frequency signal (Hz)
 goal_frequency = 200   # Sampling rate of the low-frequency signal (Hz) /!\ has to be a divider of file_frequency
 duration = 20  # Duration of the signals (seconds)
@@ -88,34 +88,31 @@ to_save = zeros(duration*goal_frequency+1,size(high_freq_signal,2))
 to_save[:,1] = t_low
 
 ref_signal = readdlm(joinpath(@__DIR__, "..", "data", "Robot_200Hz", "Inputs", File * ".txt"))
-
+hybrid_cols = [1, 3, 2, 5, 4]
 # Iterate over each data column
 for col in 2:size(high_freq_signal, 2)  # Iterate over each data column
 
     # Apply Moving Average manually
-    ma_filtered = moving_average(high_freq_signal[:, col], ma_window_size)
+    ma_filtered = moving_average(high_freq_signal[:, hybrid_cols[col]], ma_window_size)
 
     # Resample the filtered signals to the 50Hz low-frequency time points using the closest point method
-    ma_resampled = resample_signal_closest(ma_filtered, t_high, t_low)
+    ma_resampled = resample_signal_closest(ma_filtered, t_high, t_low).*(-1.0)
 
     
     to_save[:,col] = ma_resampled
     
-    plt = plot(t_high, high_freq_signal[:,col], label = "Simulation signal", lw = 2, xlims=(0, 5))
+    plt = plot(t_low, ref_signal[:,col], label = "Reference signal", lw = 2, xlims=(0, 5))
     plot!(t_low, ma_resampled, label = "Simulation resampled", lw = 2, xlims=(0, 5)) 
 
     name = data[col]
-    #mean_error = calculate_me(ref_signal[:,col], ma_resampled)    
-    #RMSE = calculate_rmse(ref_signal[:,col], ma_resampled) 
-    #println("Mean error on $File $name : $mean_error")
-    #println("RMSE on $File $name : $RMSE")
-    max = maximum(ref_signal[:,col])
-    min = minimum(ref_signal[:,col])
-    println("$max, $min, $(max-min)")
+    mean_error = calculate_me(ref_signal[:,col], ma_resampled)    
+    RMSE = calculate_rmse(ref_signal[:,col], ma_resampled) 
+    println("Mean error on $File $name : $mean_error")
+    println("RMSE on $File $name : $RMSE")
 
     println()
 
-    if(false)
+    if(true)
         # Save the figure to verify moving average
         savefig(plt, joinpath(@__DIR__, "signal_simuvsrobot_$File$name.pdf"))
     end

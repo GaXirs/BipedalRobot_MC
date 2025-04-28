@@ -191,7 +191,13 @@ function controller_voltage_input_file(
     time::Float64,
     Δt_file::Float64,
     filename::String,
+    folder_save::String;
+    write_in_folder::Bool=false,
 )
+    if(write_in_folder)
+        open(joinpath(folder_save, "Velocity.txt"), "w") do file end
+        open(joinpath(folder_save, "Position.txt"), "w") do file end
+    end
     #----------------------------------------------------------------------------
     #   Read the torques from filename and applies it to the URDF Robot joints
     #----------------------------------------------------------------------------
@@ -217,8 +223,11 @@ function controller_voltage_input_file(
         ddl = 2 # Non-actuated joints at each side of the actuated joints 
         # The values are only changed at the simulation frequency
         # This is needed since the function simulate of RigidBody dynamic will iterate twice faster as it uses pre-calculation
+        current_̇q = velocity(state)[(end - 3 - ddl):(end - ddl)]
+        current_q = configuration(state)[(end - 3 - ddl):(end - ddl)]
 
         if (t >= sim_index * Δt_file && t < time)
+
             open(filename, "r") do file
                 lines = readlines(file)                                         
                 line = split(lines[sim_index+1] , " ")
@@ -226,10 +235,18 @@ function controller_voltage_input_file(
                 # We only change the torques of the hips and the knees                                 
                 temp_u .= parse.(Float64, line[2:end])                                         
             end
+            if(write_in_folder)
+                open(joinpath(folder_save, "Velocity.txt"), "a") do file 
+                    write(file, join([t,current_̇q...], " ") * "\n") 
+                end
+                open(joinpath(folder_save, "Position.txt"), "a") do file 
+                    write(file, join([t,current_q...], " ") * "\n") 
+                end
+            end
             sim_index += 1
         end
+        
         # τ needs to be [0 0 τ_LH τ_RH τ_LK τ_RK 0 0]
-        current_̇q = velocity(state)[(end - 3 - ddl):(end - ddl)]
         ω = current_̇q .* [HGR, HGR, KGR, KGR]
 
         τ_0 = temp_u .* [HGR, HGR, KGR, KGR] .* ktp  .- ω .* [HGR, HGR, KGR, KGR] .* Kvp
@@ -275,6 +292,9 @@ function dynamixel_controller(
 
     # Reconstruct qref, ZMP, and CoM
     qref = hcat(q1_l, q1_r, q2_l, q2_r)  # Reconstruct qref
+    # note : to get the right plots, you need to do for the hybrid: hcat(q1_r, q1_l, q2_r, q2_l) .* (-1.0)
+    # This is because Xing used another convension for the URDF compared to the robot ;(
+    # Since the prismatic is symmetric, it does not change anything fortunately
     q = [0.0,0.0,0.0,0.0]
 
     #----------------------------------------------------------------------------
@@ -347,7 +367,7 @@ function dynamixel_controller(
             τ_m .= τ_0 .- sign.(ω) .* [HGR, HGR, KGR, KGR] .* τc_u
             temp_τ[(end - 3 - ddl):(end - ddl)] .= τ_m
 
-            if(write_in_folder)
+            if(write_in_folder && t >= δt_file*prev_file_index)
                 open(joinpath(folder_save, "Current.txt"), "a") do file 
                     write(file, join([t,i...], " ") * "\n") 
                 end

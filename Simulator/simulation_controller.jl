@@ -41,18 +41,18 @@ CSV_concrete_trajectory = joinpath(@__DIR__, "..", "WalkingPatterns", "Dionysos_
 ###########################################################
 
 ANIMATE_RESULT = true;
-data_from_WP = false;
-write_output = false; # only used when data_from_WP = true. Note: increases the computational time like hell
+data_from_WP = true;
+write_output = false; #Note: increases the computational time like hell
 
-freq = 200.0; # frequency of the CSV or the txt to read
-tend = 5.0; # end time of the simulation
+freq = 10.0; # frequency of the CSV or the txt to read
+tend = 10.0; # end time of the simulation
 
 # For data_from_WP = false
 filename_read = joinpath(@__DIR__, "..", "data", "Robot_200Hz", "Inputs", "Voltage.txt");
 
 #For data_from_WP = true
-WP_to_play = CSV_ZMP;
-folder_save = joinpath(@__DIR__, "..", "data", "Concrete_traj_prismatic")
+WP_to_play = CSV_concrete_trajectory;
+folder_save = joinpath(@__DIR__, "..", "data", "Dionysos", "Trajectory")
 
 # URDF to used
 # Simulation parameters
@@ -91,7 +91,8 @@ if(data_from_WP)
 else
     Δt_file = 1/freq
     # Simulate the robot
-    controller! = controller_voltage_input_file(rs, tend, Δt_file, filename_read)
+    folder = joinpath(@__DIR__, "..", "data", "simulation", "voltage-input")
+    controller! = controller_voltage_input_file(rs, tend, Δt_file, filename_read, folder; write_in_folder=write_output)
     @time begin
         ts, qs, vs = RigidBodyDynamics.simulate(rs.state, tend, controller!; Δt = Δt);
     end
