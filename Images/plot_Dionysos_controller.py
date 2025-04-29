@@ -6,8 +6,8 @@ verbose = False
 #----------------------------------------------------------------------------
 #                       Code PARAMETERS
 #----------------------------------------------------------------------------
-File = "Position"
-y_units = "[°]"
+File = "Voltage"
+y_units = "[V]"
 
 #----------------------------------------------------------------------------
 #                       Folder DETAILS
@@ -50,14 +50,14 @@ for i in range(len(columns_names)):
         time = np.arange(0.0, 2.4024, 0.0001)
         mult = 180/math.pi
         index = i+2
-        plt.plot(time, data_S0[:,index]*mult, label = 'Closed-loop on $S_1$', linestyle = "--", color='black', linewidth=1.5)
         plt.plot(time, data_S1[:,index]*mult, label = 'Closed-loop on $S_0$', color='tab:green', linewidth=1.5)
+        plt.plot(time, data_S0[:,index]*mult, label = 'Closed-loop on $S_1$', linestyle = "--", color='black', linewidth=1.5, alpha = 0.65)
     else:
         time = np.arange(0.0, 2.5, 0.1)
         mult = 1.0
         index = i
-        plt.step(time, np.concatenate(([0], data_S0[:,index])), label = 'Closed-loop on $S_1$', linestyle = "--", color='black', linewidth=1.5)
         plt.step(time, np.concatenate(([0], data_S1[:,index])), label = 'Closed-loop on $S_0$', color='tab:green', linewidth=1.5)
+        plt.step(time, np.concatenate(([0], data_S0[:,index])), label = 'Closed-loop on $S_1$', linestyle = "--", color='black', linewidth=1.5, alpha = 0.65)
     plt.legend()
             
     

@@ -43,7 +43,10 @@ for i in range(len(columns_names)-1):
     plt.xlim(0, 10.0) # 5s plots
 
     # Plot data
-    plt.plot(data_WP[:,0], data_WP[:,i+1]*(180/math.pi), label = 'Closed-loop on $S_1$', linestyle = "--", color='black', linewidth=1.5)
+    plt.axvline(x=0.7, color = "purple", alpha = 0.33)
+    plt.axvline(x=2.4, color = "purple", alpha = 0.33)
+    plt.axvline(x=4.8, color = "purple", alpha = 0.33)
+    plt.plot(data_WP[:,0], data_WP[:,i+1]*(180/math.pi), label = 'Reference trajectory', linestyle = "--", color='black', linewidth=1.5, alpha = 0.65)
     plt.plot(data_simu[:,0], data_simu[:,i+1]*(180/math.pi), label = 'Validation on $S_0$', color='tab:green', linewidth=1.5)
     plt.legend()
     if(verbose):
