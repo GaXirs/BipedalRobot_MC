@@ -26,22 +26,15 @@ import .RobotSimulator
 #ZMP
 CSV_ZMP = joinpath(@__DIR__, "..", "WalkingPatterns", "ZMP.csv");
 
-# Asbtract trajectory 
-CSV_one_sided = joinpath(@__DIR__, "..", "WalkingPatterns", "Dionysos_trajectory_one_sided.csv");
-CSV_two_sided = joinpath(@__DIR__, "..", "WalkingPatterns", "Dionysos_trajectory_two_sided.csv");
-
-# Pseudo concrete trajectory
-CSV_pseudo_concrete_trajectory = joinpath(@__DIR__, "..", "WalkingPatterns", "Dionysos_trajectory_pseudo_concrete_trajectory.csv")
-
 # Concrete trajectory
-CSV_concrete_trajectory = joinpath(@__DIR__, "..", "WalkingPatterns", "Dionysos_trajectory_concrete_trajectory.csv")
+CSV_Julia_trajectory = joinpath(@__DIR__, "..", "WalkingPatterns", "Dionysos_trajectory.csv")
 
 ###########################################################
 #                      Code parameters                    #
 ###########################################################
 
 ANIMATE_RESULT = true;
-data_from_WP = true;
+data_from_WP = false;
 write_output = false; #Note: increases the computational time like hell
 
 freq = 10.0; # frequency of the CSV or the txt to read
@@ -51,7 +44,7 @@ tend = 10.0; # end time of the simulation
 filename_read = joinpath(@__DIR__, "..", "data", "Robot_200Hz", "Inputs", "Voltage.txt");
 
 #For data_from_WP = true
-WP_to_play = CSV_concrete_trajectory;
+WP_to_play = CSV_Julia_trajectory;
 folder_save = joinpath(@__DIR__, "..", "data", "Dionysos", "Trajectory")
 
 # URDF to used
