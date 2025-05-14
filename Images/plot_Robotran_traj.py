@@ -68,10 +68,10 @@ for i in range(len(columns_names)-1):
     plt.axvline(x=2.4, color = "purple", alpha = 0.33)
     plt.axvline(x=4.8, color = "purple", alpha = 0.33)
     """
-    plt.plot(data_WP[:,0], data_WP[:,i+1]*(180/math.pi), label = 'Julia reference trajectory', linestyle = "--", color='tab:green', linewidth=1.5, alpha = 0.65)
-    plt.plot(data_simu[::100,0], data_simu[::100,columns_index_Robotran[i]]*(180/math.pi), label = 'Julia validation on $S_0$', color='tab:green', linewidth=1.5)
-    plt.plot(data_WP_D[:,0], data_WP_D[:,i+1]*(180/math.pi), label = 'Robotran reference trajectory', linestyle = "--", color='tab:blue', linewidth=1.5, alpha = 0.65)
-    plt.plot(data_simu_D[:,0], data_simu_D[:,i+1]*(180/math.pi), label = 'Robotran validation on $S_0$', color='tab:blue', linewidth=1.5)
+    plt.plot(data_WP[:,0], data_WP[:,i+1]*(180/math.pi), label = 'Robotran reference trajectory', linestyle = "--", color='tab:orange', linewidth=1.5, alpha = 0.65)
+    plt.plot(data_simu[::100,0], data_simu[::100,columns_index_Robotran[i]]*(180/math.pi), label = 'Robotran validation on $S_0$', color='tab:orange', linewidth=1.5)
+    plt.plot(data_WP_D[:,0], data_WP_D[:,i+1]*(180/math.pi), label = 'Julia reference trajectory', linestyle = "--", color='tab:green', linewidth=1.5, alpha = 0.65)
+    plt.plot(data_simu_D[:,0], data_simu_D[:,i+1]*(180/math.pi), label = 'Julia validation on $S_0$', color='tab:green', linewidth=1.5)
 
     if(i < 2):
         plt.legend(loc = "upper left")
